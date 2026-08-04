@@ -1,8 +1,10 @@
 <template>
-  <a
-    role="button"
+  <div
+    v-bind:role="style.isEditing ? undefined : 'button'"
     data-x-role="entry"
-    v-bind:tabindex="tabindex"
+    v-bind:data-entry-hash="entry.hash"
+    v-bind:tabindex="style.isEditing ? -1 : tabindex"
+    v-bind:aria-label="`${entry.issuer} ${entry.account}`"
     v-bind:class="{
       entry: true,
       pinnedEntry: entry.pinned,
@@ -10,14 +12,22 @@
     }"
     v-on:click="copyCode(entry)"
     v-on:keydown.enter="copyCode(entry)"
+    v-on:keydown.space.prevent="copyCode(entry)"
   >
-    <div class="deleteAction" v-on:click="removeEntry(entry)">
+    <button
+      class="deleteAction icon-button"
+      type="button"
+      v-bind:title="i18n.confirm_delete"
+      v-bind:aria-label="i18n.confirm_delete"
+      v-on:click.stop="removeEntry(entry)"
+    >
       <IconMinusCircle />
-    </div>
+    </button>
     <div
       class="sector"
       v-if="entry.type !== OTPType.hotp && entry.type !== OTPType.hhex"
       v-show="sectorStart"
+      aria-hidden="true"
     >
       <svg viewBox="0 0 16 16">
         <circle
@@ -31,13 +41,17 @@
         />
       </svg>
     </div>
-    <div
-      v-bind:class="{ counter: true, disabled: style.hotpDiabled }"
+    <button
+      v-bind:class="{ counter: true, disabled: style.hotpDisabled }"
       v-if="entry.type === OTPType.hotp || entry.type === OTPType.hhex"
-      v-on:click="nextCode(entry)"
+      type="button"
+      v-bind:title="i18n.update"
+      v-bind:aria-label="i18n.update"
+      v-bind:disabled="style.hotpDisabled"
+      v-on:click.stop="nextCode(entry)"
     >
       <IconRedo />
-    </div>
+    </button>
     <div class="issuer">
       {{
         entry.issuer.split("::")[0] +
@@ -47,6 +61,7 @@
     <div class="issuerEdit">
       <input
         v-bind:placeholder="i18n.issuer"
+        v-bind:aria-label="i18n.issuer"
         type="text"
         v-model="entry.issuer"
         v-on:change="entry.update(encryption)"
@@ -64,25 +79,35 @@
     <div class="issuerEdit">
       <input
         v-bind:placeholder="i18n.accountName"
+        v-bind:aria-label="i18n.accountName"
         type="text"
         v-model="entry.account"
         v-on:change="entry.update(encryption)"
       />
     </div>
-    <div
-      class="showqr"
+    <button
+      class="showqr icon-button"
+      type="button"
+      v-bind:title="i18n.add_qr"
+      v-bind:aria-label="i18n.add_qr"
       v-if="shouldShowQrIcon(entry)"
       v-on:click.stop="showQr(entry)"
     >
       <IconQr />
-    </div>
-    <div class="pin" v-on:click.stop="pin(entry)">
+    </button>
+    <button
+      class="pin icon-button"
+      type="button"
+      v-bind:title="i18n.edit"
+      v-bind:aria-label="i18n.edit"
+      v-on:click.stop="pin(entry)"
+    >
       <IconPin />
-    </div>
-    <div class="movehandle">
+    </button>
+    <div class="movehandle" aria-hidden="true">
       <IconBars />
     </div>
-  </a>
+  </div>
 </template>
 <script lang="ts">
 import Vue from "vue";

@@ -9,6 +9,39 @@ import { StorageLocation, UserSettings } from "../models/settings";
 import { DataType } from "../models/otp";
 
 const LegacyEncryption = "LegacyEncryption";
+const generatedTimeSteps = new WeakMap<OTPEntryInterface, string>();
+
+export function updateCodes(state: AccountsState) {
+  const offset = Number(UserSettings.items.offset) || 0;
+  const adjustedUnixTime = Math.floor(Date.now() / 1000) + offset;
+  const second = ((adjustedUnixTime % 60) + 60) % 60;
+  state.second = second;
+
+  const currentlyEncrypted = state.entries.some(
+    (entry) => entry.secret === null
+  );
+
+  if (!state.sectorStart && state.entries.length > 0 && !currentlyEncrypted) {
+    state.sectorStart = true;
+    state.sectorOffset = -second;
+  }
+
+  for (const entry of state.entries) {
+    if (entry.type === OTPType.hotp || entry.type === OTPType.hhex) {
+      continue;
+    }
+
+    const period = Math.max(1, Number(entry.period) || 30);
+    const timeStep = `${period}:${Math.floor(adjustedUnixTime / period)}`;
+    if (generatedTimeSteps.get(entry) === timeStep) {
+      continue;
+    }
+
+    entry.generate();
+    generatedTimeSteps.set(entry, timeStep);
+  }
+}
+
 export class Accounts implements Module {
   async getModule() {
     const cachedKeyInfo = await this.getCachedKeyInfo();
@@ -83,57 +116,7 @@ export class Accounts implements Module {
         showSearch(state: AccountsState) {
           state.showSearch = true;
         },
-        updateCodes(state: AccountsState) {
-          let second = new Date().getSeconds();
-          if (UserSettings.items.offset) {
-            // prevent second from negative
-            second += Number(UserSettings.items.offset) + 60;
-          }
-
-          second = second % 60;
-          state.second = second;
-
-          let currentlyEncrypted = false;
-
-          for (const entry of state.entries) {
-            if (entry.secret === null) {
-              currentlyEncrypted = true;
-            }
-          }
-
-          if (
-            !state.sectorStart &&
-            state.entries.length > 0 &&
-            !currentlyEncrypted
-          ) {
-            state.sectorStart = true;
-            state.sectorOffset = -second;
-          }
-
-          // if (second > 25) {
-          //   app.class.timeout = true;
-          // } else {
-          //   app.class.timeout = false;
-          // }
-          // if (second < 1) {
-          //   const entries = app.entries as OTP[];
-          //   for (let i = 0; i < entries.length; i++) {
-          //     if (entries[i].type !== OTPType.hotp &&
-          //         entries[i].type !== OTPType.hhex) {
-          //       entries[i].generate();
-          //     }
-          //   }
-          // }
-          const entries = state.entries as OTPEntryInterface[];
-          for (let i = 0; i < entries.length; i++) {
-            if (
-              entries[i].type !== OTPType.hotp &&
-              entries[i].type !== OTPType.hhex
-            ) {
-              entries[i].generate();
-            }
-          }
-        },
+        updateCodes,
         loadCodes(state: AccountsState, newCodes: OTPEntryInterface[]) {
           state.entries = newCodes;
         },

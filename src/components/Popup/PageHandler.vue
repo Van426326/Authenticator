@@ -1,12 +1,16 @@
 <template>
   <div id="info">
-    <div
+    <button
       id="infoClose"
+      class="icon-button"
+      type="button"
+      v-bind:title="i18n.close"
+      v-bind:aria-label="i18n.close"
       v-if="!(info === 'EnterPasswordPage' || info === 'LoadingPage')"
       v-on:click="hideInfo()"
     >
       <IconXCircle />
-    </div>
+    </button>
     <component v-bind:is="info" id="infoContent"></component>
   </div>
 </template>

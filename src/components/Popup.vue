@@ -45,6 +45,8 @@
     <!-- EPHERMAL MESSAGE -->
     <div
       id="notification"
+      role="status"
+      aria-live="polite"
       v-bind:class="{
         fadein: style.notificationFadein,
         fadeout: style.notificationFadeout,
@@ -56,9 +58,15 @@
     <!-- QR -->
     <div
       id="qr"
+      role="button"
+      tabindex="0"
+      v-bind:aria-label="i18n.close"
       v-bind:class="{ qrfadein: style.qrfadein, qrfadeout: style.qrfadeout }"
       v-bind:style="{ 'background-image': qr }"
       v-on:click="hideQr()"
+      v-on:keydown.enter="hideQr()"
+      v-on:keydown.space.prevent="hideQr()"
+      v-on:keydown.esc="hideQr()"
     ></div>
 
     <!-- CLIPBOARD -->

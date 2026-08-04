@@ -4,19 +4,25 @@
     v-bind:class="{ filter: shouldFilter && filter, search: showSearch }"
   >
     <!-- Filter -->
-    <div class="under-header" id="filter" v-on:click="clearFilter()">
+    <button
+      class="under-header"
+      id="filter"
+      type="button"
+      v-on:click="clearFilter()"
+    >
       {{ i18n.show_all_entries }}
-    </div>
+    </button>
     <!-- Search -->
     <div class="under-header" id="search">
+      <label class="visually-hidden" for="searchInput">{{ i18n.search }}</label>
       <input
         id="searchInput"
         v-model="searchText"
         v-bind:placeholder="i18n.search"
-        type="text"
-        tabindex="-1"
+        v-bind:aria-label="i18n.search"
+        type="search"
       />
-      <div id="searchHint" v-if="searchText === ''">
+      <div id="searchHint" v-if="searchText === ''" aria-hidden="true">
         <div></div>
         <div id="searchHintBorder">/</div>
         <div></div>
@@ -39,7 +45,11 @@
         v-bind:entry="entry"
         v-bind:tabindex="getTabindex(entry)"
       />
-      <div class="no-entry" v-if="entries.length === 0 && initComplete">
+      <div
+        class="no-entry"
+        role="status"
+        v-if="entries.length === 0 && initComplete"
+      >
         <IconKey />
         <p>
           {{ i18n.no_entires }}
@@ -62,12 +72,7 @@ import EntryComponent from "./EntryComponent.vue";
 // import IconPlus from "../../../svg/plus.svg";
 import IconKey from "../../../svg/key-solid.svg";
 
-const computed: {
-  filter: () => boolean;
-  showSearch: () => boolean;
-  shouldFilter: () => boolean;
-  entries: () => OTPEntry[];
-} = {
+const stateComputed = {
   ...mapState("accounts", ["filter", "showSearch", "initComplete"]),
   ...mapGetters("accounts", ["shouldFilter", "entries"]),
 };
@@ -78,32 +83,37 @@ export default Vue.extend({
       searchText: "",
     };
   },
-  computed,
+  computed: {
+    ...stateComputed,
+    matchedEntryHashes(): Set<string> {
+      return new Set(this.$store.getters["accounts/matchedEntries"]);
+    },
+    normalizedSearchText(): string {
+      return this.searchText.trim().toLocaleLowerCase();
+    },
+    firstVisibleHash(): string {
+      const firstEntry = this.entries.find((entry: OTPEntry) =>
+        this.isEntryVisible(entry)
+      );
+      return firstEntry?.hash || "";
+    },
+  },
   methods: {
     openLink(url: string) {
       window.open(url, "_blank");
       return;
     },
     isMatchedEntry(entry: OTPEntry) {
-      for (const hash of this.$store.getters["accounts/matchedEntries"]) {
-        if (entry.hash === hash) {
-          return true;
-        }
-      }
-      return false;
+      return this.matchedEntryHashes.has(entry.hash);
     },
     isSearchedEntry(entry: OTPEntry) {
-      if (this.searchText === "") {
+      if (!this.normalizedSearchText) {
         return true;
       }
-      if (
-        entry.issuer.toLowerCase().includes(this.searchText.toLowerCase()) ||
-        entry.account.toLowerCase().includes(this.searchText.toLowerCase())
-      ) {
-        return true;
-      } else {
-        return false;
-      }
+      return (
+        entry.issuer.toLocaleLowerCase().includes(this.normalizedSearchText) ||
+        entry.account.toLocaleLowerCase().includes(this.normalizedSearchText)
+      );
     },
     clearFilter() {
       this.$store.dispatch("accounts/clearFilter");
@@ -118,11 +128,7 @@ export default Vue.extend({
       );
     },
     getTabindex(entry: OTPEntry) {
-      const firstEntry = this.entries.find((entry) =>
-        this.isEntryVisible(entry)
-      );
-
-      return entry === firstEntry ? 0 : -1;
+      return entry.hash === this.firstVisibleHash ? 0 : -1;
     },
     findNextEntryIndex(reverse: boolean) {
       if (document.activeElement?.getAttribute("data-x-role") !== "entry") {
@@ -138,17 +144,21 @@ export default Vue.extend({
       }
 
       // reverse modify origin array, and use slice() to make a clone first
-      const _entries = reverse ? this.entries.slice().reverse() : this.entries;
+      const _entries: OTPEntry[] = reverse
+        ? this.entries.slice().reverse()
+        : this.entries;
 
       let nextIndex = _entries.findIndex(
-        (entry, index) =>
+        (entry: OTPEntry, index: number) =>
           index >
             (reverse ? this.entries.length - 1 - activeIndex : activeIndex) &&
           this.isEntryVisible(entry)
       );
 
       if (nextIndex === -1) {
-        nextIndex = _entries.findIndex((entry) => this.isEntryVisible(entry));
+        nextIndex = _entries.findIndex((entry: OTPEntry) =>
+          this.isEntryVisible(entry)
+        );
       }
 
       return nextIndex;

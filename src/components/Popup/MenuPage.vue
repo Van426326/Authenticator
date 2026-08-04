@@ -2,69 +2,104 @@
   <div>
     <div class="header">
       <span id="menuName">{{ i18n.settings }}</span>
-      <div class="icon" id="i-close" v-on:click="hideMenu()">
+      <button
+        class="icon icon-button"
+        id="i-close"
+        type="button"
+        v-bind:title="i18n.close"
+        v-bind:aria-label="i18n.close"
+        v-on:click="hideMenu()"
+      >
         <IconArrowLeft />
-      </div>
+      </button>
     </div>
     <div id="menuBody">
       <div class="menuList">
-        <p v-bind:title="i18n.advisor" v-on:click="showInfo('AdvisorPage')">
+        <button
+          class="menuItem"
+          type="button"
+          v-bind:title="i18n.advisor"
+          v-on:click="showInfo('AdvisorPage')"
+        >
           <span><IconAdvisor /></span>{{ i18n.advisor }}
-        </p>
+        </button>
         <a
+          class="menuItem"
           href="permissions.html"
           target="_blank"
-          style="text-decoration: none"
+          v-bind:title="i18n.permissions"
         >
-          <p v-bind:title="i18n.permissions">
-            <span><IconClipboardCheck /></span>{{ i18n.permissions }}
-          </p>
+          <span><IconClipboardCheck /></span>{{ i18n.permissions }}
         </a>
       </div>
       <div class="menuList">
-        <p v-bind:title="i18n.backup" v-on:click="showInfo('BackupPage')">
+        <button
+          class="menuItem"
+          type="button"
+          v-bind:title="i18n.backup"
+          v-on:click="showInfo('BackupPage')"
+        >
           <span><IconExchange /></span>{{ i18n.backup }}
-        </p>
-        <p
+        </button>
+        <button
+          class="menuItem"
+          type="button"
           v-bind:title="i18n.security"
           v-on:click="showInfo('SetPasswordPage')"
         >
           <span><IconLock /></span>{{ i18n.security }}
-        </p>
-        <p
+        </button>
+        <button
+          class="menuItem"
+          type="button"
           v-bind:title="i18n.sync_clock"
           v-on:click="syncClock()"
           v-if="isSupported"
         >
           <span><IconSync /></span>{{ i18n.sync_clock }}
-        </p>
-        <p
+        </button>
+        <button
+          class="menuItem"
+          type="button"
           v-bind:title="i18n.resize_popup_page"
           v-on:click="showInfo('PreferencesPage')"
         >
           <span><IconWrench /></span>{{ i18n.resize_popup_page }}
-        </p>
+        </button>
       </div>
       <div class="menuList">
-        <p v-bind:title="i18n.feedback" v-on:click="openHelp()">
+        <button
+          class="menuItem"
+          data-test="feedback"
+          type="button"
+          v-bind:title="i18n.feedback"
+          v-on:click="openHelp()"
+        >
           <span><IconComments /></span>{{ i18n.feedback }}
-        </p>
-        <p
+        </button>
+        <button
+          class="menuItem"
+          type="button"
           v-bind:title="i18n.translate"
           v-on:click="openLink('https://otp.ee/translate')"
         >
           <span><IconGlobe /></span>{{ i18n.translate }}
-        </p>
-        <p
+        </button>
+        <button
+          class="menuItem"
+          type="button"
           v-bind:title="i18n.source"
           v-on:click="openLink('https://otp.ee/sourcecode')"
         >
           <span><IconCode /></span>{{ i18n.source }}
-        </p>
-        <a href="licenses.html" target="_blank" style="text-decoration: none">
-          <p v-bind:title="i18n.about">
-            <span><IconInfo /></span>{{ i18n.about }}
-          </p>
+        </button>
+        <a
+          class="menuItem"
+          href="licenses.html"
+          target="_blank"
+          v-bind:title="i18n.about"
+        >
+          <span><IconInfo /></span>{{ i18n.about }}
         </a>
       </div>
       <div id="version">Version {{ version }}</div>

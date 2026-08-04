@@ -174,18 +174,22 @@ export default Vue.extend({
         width: window.innerWidth,
       });
     },
-    migrateStorage() {
+    async migrateStorage() {
       this.$store.commit("currentView/changeView", "LoadingPage");
-      this.$store
-        .dispatch("accounts/migrateStorage", this.newStorageLocation)
-        .then((m) => {
-          this.$store.commit("notification/alert", this.i18n[m]);
-          this.$store.commit("currentView/changeView", "PreferencesPage");
-        }),
-        (r: string) => {
-          this.$store.commit("notification/alert", this.i18n.updateFailure + r);
-          this.$store.commit("currentView/changeView", "PreferencesPage");
-        };
+      try {
+        const message = await this.$store.dispatch(
+          "accounts/migrateStorage",
+          this.newStorageLocation
+        );
+        this.$store.commit("notification/alert", this.i18n[message]);
+      } catch (reason) {
+        this.$store.commit(
+          "notification/alert",
+          `${this.i18n.updateFailure} ${String(reason)}`
+        );
+      } finally {
+        this.$store.commit("currentView/changeView", "PreferencesPage");
+      }
     },
     requireContextMenuPermission() {
       chrome.permissions.request(

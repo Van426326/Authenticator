@@ -1,39 +1,49 @@
 <template>
-  <div class="header">
-    <span v-on:dblclick="popOut()">{{ i18n.extName }}</span>
+  <header class="header">
+    <span class="header-title" v-on:dblclick="popOut()">{{
+      i18n.extName
+    }}</span>
     <div v-show="!isPopup()">
-      <div
-        class="icon"
+      <button
+        class="icon icon-button"
         id="i-menu"
+        type="button"
         v-bind:title="i18n.settings"
+        v-bind:aria-label="i18n.settings"
         v-on:click="showMenu()"
         v-show="!style.isEditing"
       >
         <IconCog />
-      </div>
-      <div
-        class="icon"
+      </button>
+      <button
+        class="icon icon-button"
         id="i-plus"
+        type="button"
         v-bind:title="i18n.add_code"
+        v-bind:aria-label="i18n.add_code"
         v-on:click="showInfo('AddMethodPage')"
         v-show="style.isEditing"
       >
         <IconPlus />
-      </div>
-      <div
-        class="icon"
+      </button>
+      <button
+        class="icon icon-button"
         id="i-lock"
+        type="button"
         v-bind:title="i18n.lock"
+        v-bind:aria-label="i18n.lock"
         v-on:click="lock()"
         v-show="!style.isEditing && !!defaultEncryption"
       >
         <IconLock />
-      </div>
+      </button>
       <div
-        class="icon"
+        class="icon sync-status"
         id="i-sync"
+        role="status"
+        v-bind:aria-label="i18n.storage_sync_info"
         v-bind:style="{
-          left: !!defaultEncryption ? '70px' : '45px',
+          left: !!defaultEncryption ? '76px' : '48px',
         }"
         v-show="
           (dropboxToken || driveToken || oneDriveToken) && !style.isEditing
@@ -41,35 +51,30 @@
       >
         <IconSync />
       </div>
-      <div
-        class="icon"
+      <button
+        class="icon icon-button"
         id="i-qr"
+        type="button"
         v-bind:title="i18n.add_qr"
+        v-bind:aria-label="i18n.add_qr"
         v-show="!style.isEditing"
         v-on:click="beginCapture()"
       >
         <IconScan />
-      </div>
-      <div
-        class="icon"
+      </button>
+      <button
+        class="icon icon-button"
         id="i-edit"
+        type="button"
         v-bind:title="i18n.edit"
-        v-if="!style.isEditing"
+        v-bind:aria-label="i18n.edit"
         v-on:click="editEntry()"
       >
-        <IconPencil />
-      </div>
-      <div
-        class="icon"
-        id="i-edit"
-        v-bind:title="i18n.edit"
-        v-else
-        v-on:click="editEntry()"
-      >
-        <IconCheck />
-      </div>
+        <IconPencil v-if="!style.isEditing" />
+        <IconCheck v-else />
+      </button>
     </div>
-  </div>
+  </header>
 </template>
 <script lang="ts">
 import Vue from "vue";

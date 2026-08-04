@@ -58,10 +58,8 @@ describe("MenuPage", () => {
     });
   });
 
-  const clickMenuPageButtonByTitle = async (
-    wrapper: Wrapper<any>,
-    title: string
-  ) => wrapper.find(`*[title='${title}']`).trigger("click");
+  const clickFeedbackButton = async (wrapper: Wrapper<any>) =>
+    wrapper.find("[data-test='feedback']").trigger("click");
 
   describe("feedback button", () => {
     // mocks the user agent for testing purposes
@@ -87,7 +85,7 @@ describe("MenuPage", () => {
       mockUserAgent(
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"
       );
-      await clickMenuPageButtonByTitle(wrapper, "Feedback");
+      await clickFeedbackButton(wrapper);
       assert.ok(
         chrome.tabs.create.withArgs({ url: "https://otp.ee/chromeissues" })
           .calledOnce,
@@ -99,7 +97,7 @@ describe("MenuPage", () => {
       mockUserAgent(
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.74 Safari/537.36 Edg/79.0.309.43"
       );
-      await clickMenuPageButtonByTitle(wrapper, "Feedback");
+      await clickFeedbackButton(wrapper);
       assert.ok(
         chrome.tabs.create.withArgs({ url: "https://otp.ee/edgeissues" })
           .calledOnce,
@@ -111,7 +109,7 @@ describe("MenuPage", () => {
       mockUserAgent(
         "Mozilla/5.0 (Windows NT x.y; rv:10.0) Gecko/20100101 Firefox/10.0"
       );
-      await clickMenuPageButtonByTitle(wrapper, "Feedback");
+      await clickFeedbackButton(wrapper);
       assert.ok(
         chrome.tabs.create.withArgs({ url: "https://otp.ee/firefoxissues" })
           .calledOnce,
@@ -121,7 +119,7 @@ describe("MenuPage", () => {
 
     it("should open a new tab to the Chrome help page when the feedback button is clicked and the user agent is unknown", async () => {
       mockUserAgent("Unknown");
-      await clickMenuPageButtonByTitle(wrapper, "Feedback");
+      await clickFeedbackButton(wrapper);
       assert.ok(
         chrome.tabs.create.withArgs({ url: "https://otp.ee/chromeissues" })
           .called,
@@ -160,7 +158,7 @@ describe("MenuPage", () => {
       });
 
       it("should open a new tab to the page specified in ManagedStorage", async () => {
-        await clickMenuPageButtonByTitle(wrapper, "Feedback");
+        await clickFeedbackButton(wrapper);
         assert.ok(
           chrome.tabs.create.withArgs({ url: "https://authenticator.cc" })
             .called,

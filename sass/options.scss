@@ -1,0 +1,239 @@
+@import "ui";
+
+:root {
+  color-scheme: light dark;
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  background: #f4f7fb;
+  color: #172033;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 280px;
+  margin: 0;
+  background: radial-gradient(
+      circle at top left,
+      rgba(0, 136, 204, 0.12),
+      transparent 34rem
+    ),
+    #f4f7fb;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.options-shell {
+  width: min(760px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 56px 0;
+}
+
+.options-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.options-brand {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #0798df, #006ba3);
+  box-shadow: 0 10px 24px rgba(0, 108, 164, 0.24);
+  color: white;
+  font-size: 24px;
+  font-weight: 750;
+}
+
+.options-eyebrow,
+.options-header h1,
+.danger-card h2,
+.danger-card p {
+  margin: 0;
+}
+
+.options-eyebrow,
+.danger-card__label {
+  color: #637089;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.options-header h1 {
+  margin-top: 2px;
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.danger-card {
+  overflow: hidden;
+  border: 1px solid #e0e6ef;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 50px rgba(30, 45, 70, 0.1);
+}
+
+.danger-card__content {
+  padding: 28px;
+}
+
+.danger-card__label {
+  color: #ba392e;
+}
+
+.danger-card h2 {
+  margin-top: 6px;
+  font-size: 21px;
+}
+
+.danger-card__warning {
+  max-width: 64ch;
+  margin-top: 12px !important;
+  color: #536079;
+  line-height: 1.65;
+}
+
+.confirm-control {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid #ead0ce;
+  border-radius: 12px;
+  background: #fff7f6;
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.confirm-control input {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: #c43f33;
+}
+
+.danger-card__actions {
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 28px;
+  border-top: 1px solid #e8edf4;
+  background: #fafbfd;
+}
+
+.danger-button {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 10px;
+  background: #c43f33;
+  box-shadow: 0 6px 14px rgba(196, 63, 51, 0.2);
+  color: white;
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.danger-button:hover:not(:disabled) {
+  background: #a92f25;
+}
+
+.danger-button:disabled {
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.danger-button:focus-visible,
+.confirm-control:focus-within {
+  outline: 3px solid rgba(0, 128, 192, 0.35);
+  outline-offset: 3px;
+}
+
+.options-status {
+  color: #37654a;
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    background: #111827;
+    color: #eef2f8;
+  }
+
+  body {
+    background: radial-gradient(
+        circle at top left,
+        rgba(0, 136, 204, 0.18),
+        transparent 34rem
+      ),
+      #111827;
+  }
+
+  .options-eyebrow,
+  .danger-card__warning {
+    color: #aeb9ca;
+  }
+
+  .danger-card {
+    border-color: #344056;
+    background: rgba(29, 39, 56, 0.96);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+  }
+
+  .danger-card__label {
+    color: #ff9489;
+  }
+
+  .confirm-control {
+    border-color: #71443f;
+    background: #342524;
+  }
+
+  .danger-card__actions {
+    border-color: #344056;
+    background: #182235;
+  }
+
+  .options-status {
+    color: #8ed2a8;
+  }
+}
+
+@media (max-width: 520px) {
+  .options-shell {
+    width: min(100% - 20px, 760px);
+    padding: 28px 0;
+  }
+
+  .danger-card__content,
+  .danger-card__actions {
+    padding: 20px;
+  }
+
+  .danger-card__actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

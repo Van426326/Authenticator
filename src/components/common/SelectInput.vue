@@ -1,7 +1,10 @@
 <template>
   <div class="control-group">
-    <label class="combo-label" style="margin: 20px 10px">{{ label }}</label>
+    <label :for="inputId" class="combo-label" style="margin: 20px 10px">{{
+      label
+    }}</label>
     <select
+      :id="inputId"
       style="margin: 20px 10px"
       :value="value"
       :disabled="disabled"
@@ -15,7 +18,15 @@
 <script lang="ts">
 import Vue from "vue";
 
+let nextInputId = 0;
+
 export default Vue.extend({
   props: ["label", "value", "disabled"],
+  data() {
+    nextInputId += 1;
+    return {
+      inputId: `select-input-${nextInputId}`,
+    };
+  },
 });
 </script>

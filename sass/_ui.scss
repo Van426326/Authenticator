@@ -168,11 +168,13 @@ $theme-map: null;
 // Classes
 .button {
   margin: 10px;
-  padding: 20px;
-  border-radius: 2px;
+  padding: 14px 18px;
+  border-radius: 10px;
   position: relative;
   text-align: center;
-  font-size: 16px;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
   width: -moz-available;
   width: -webkit-fill-available;
   @include themify($themes) {
@@ -181,11 +183,20 @@ $theme-map: null;
     color: themed("grey-1");
   }
   cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease,
+    color 120ms ease, transform 120ms ease;
 
   &:hover {
     @include themify($themes) {
       color: themed("black-1");
     }
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    transform: none;
   }
 }
 
@@ -198,16 +209,22 @@ $theme-map: null;
 
 .input {
   display: block;
-  margin: 15px 10px 20px 10px;
-  padding: 5px 10px;
+  margin: 10px 10px 18px;
+  padding: 9px 10px;
   width: 260px;
-  border: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
   @include themify($themes) {
     color: themed("black-1");
-    border-bottom: themed("black-1") 1px solid;
+    border-color: themed("grey-2");
     background: themed("grey-3");
   }
   outline: none;
+
+  &:focus-visible {
+    outline: 3px solid rgba(0, 136, 204, 0.35);
+    outline-offset: 2px;
+  }
 }
 
 a {
