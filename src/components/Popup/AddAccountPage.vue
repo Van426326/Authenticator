@@ -115,10 +115,10 @@ export default Vue.extend({
         this.newAccount.period = undefined;
       }
 
-      const defaultEncyptionKey = this.$store.state.accounts.defaultEncryption;
-      const encryption = this.$store.state.accounts.encryption[
-        defaultEncyptionKey
-      ];
+      const defaultEncryptionKey = this.$store.state.accounts.defaultEncryption;
+      const encryption = this.$store.state.accounts.encryption.get(
+        defaultEncryptionKey
+      );
 
       const entry = new OTPEntry(
         {
@@ -138,8 +138,17 @@ export default Vue.extend({
 
       await entry.create();
       await this.$store.dispatch("accounts/addCode", entry);
+      Object.assign(this.newAccount, {
+        issuer: "",
+        account: "",
+        secret: "",
+        type: OTPType.totp,
+        period: undefined,
+        digits: 6,
+        algorithm: OTPAlgorithm.SHA1,
+      });
       this.$store.commit("style/hideInfo");
-      this.$store.commit("style/toggleEdit");
+      this.$store.commit("style/setEditing", false);
 
       const codes = document.getElementById("codes");
       if (codes) {

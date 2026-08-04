@@ -19,6 +19,7 @@ import { Qr } from "./store/Qr";
 import { Advisor } from "./store/Advisor";
 import { Dropbox, Drive, OneDrive } from "./models/backup";
 import { syncTimeWithGoogle } from "./syncTime";
+import { POPUP_HEIGHT, resolvePopupWidth } from "./models/display";
 import { StorageLocation, UserSettings } from "./models/settings";
 
 async function migrateLocalStorageToBrowserStorage() {
@@ -168,18 +169,18 @@ async function init() {
   const query = new URLSearchParams(document.location.search.substring(1));
   // Resize window to proper size if popup
   if (query.get("popup")) {
-    const zoom = Number(UserSettings.items.zoom) / 100 || 1;
-    const correctHeight = 480 * zoom;
-    const correctWidth = 320 * zoom;
+    const popupWidth = resolvePopupWidth(
+      UserSettings.items.popupWidth,
+      UserSettings.items.zoom
+    );
     if (
-      window.innerHeight !== correctHeight ||
-      window.innerWidth !== correctWidth
+      window.innerHeight !== POPUP_HEIGHT ||
+      window.innerWidth !== popupWidth
     ) {
-      // window update to correct size
       const adjustedHeight =
-        correctHeight + (window.outerHeight - window.innerHeight);
+        POPUP_HEIGHT + (window.outerHeight - window.innerHeight);
       const adjustedWidth =
-        correctWidth + (window.outerWidth - window.innerWidth);
+        popupWidth + (window.outerWidth - window.innerWidth);
       chrome.windows.update(chrome.windows.WINDOW_ID_CURRENT, {
         height: adjustedHeight,
         width: adjustedWidth,

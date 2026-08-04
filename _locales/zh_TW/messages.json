@@ -519,6 +519,21 @@
     "message": "Password incorrect"
   },
   "activate_auto_filter": {
-    "message": "Warning: Smart filter loosely matches the domain name to an account. Always verify that you are on the correct website before entering a code!"
+    "message": "警告：智慧篩選會根據網域寬鬆比對帳戶，填寫驗證碼前請確認目前網站正確。"
+  },
+  "popup_width": {
+    "message": "擴充功能寬度"
+  },
+  "width_narrow": {
+    "message": "窄"
+  },
+  "width_default": {
+    "message": "預設"
+  },
+  "width_wide": {
+    "message": "寬"
+  },
+  "drag_to_reorder": {
+    "message": "拖曳調整順序"
   }
 }

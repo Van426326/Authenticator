@@ -1,4 +1,5 @@
 import { isSafari } from "../browser";
+import { PopupWidth, resolvePopupWidth } from "../models/display";
 import { UserSettings } from "../models/settings";
 import { ManagedStorage } from "../models/storage";
 
@@ -6,10 +7,20 @@ export class Menu implements Module {
   async getModule() {
     await UserSettings.updateItems();
 
+    const popupWidth = resolvePopupWidth(
+      UserSettings.items.popupWidth,
+      UserSettings.items.zoom
+    );
+    if (UserSettings.items.popupWidth !== popupWidth) {
+      UserSettings.items.popupWidth = popupWidth;
+      UserSettings.items.zoom = undefined;
+      await UserSettings.commitItems();
+    }
+
     const menuState = {
       state: {
         version: chrome.runtime.getManifest()?.version || "0.0.0",
-        zoom: Number(UserSettings.items.zoom) || 100,
+        popupWidth,
         useAutofill: UserSettings.items.autofill === true,
         smartFilter: UserSettings.items.smartFilter === true,
         enableContextMenu: UserSettings.items.enableContextMenu === true,
@@ -27,11 +38,13 @@ export class Menu implements Module {
         ),
       },
       mutations: {
-        setZoom: (state: MenuState, zoom: number) => {
-          state.zoom = zoom;
-          UserSettings.items.zoom = zoom;
+        setPopupWidth: (state: MenuState, width: PopupWidth) => {
+          const popupWidth = resolvePopupWidth(width);
+          state.popupWidth = popupWidth;
+          UserSettings.items.popupWidth = popupWidth;
+          UserSettings.items.zoom = undefined;
           UserSettings.commitItems();
-          this.resize(zoom);
+          this.applyPopupWidth(popupWidth);
         },
         setAutofill(state: MenuState, useAutofill: boolean) {
           state.useAutofill = useAutofill;
@@ -62,16 +75,23 @@ export class Menu implements Module {
       namespaced: true,
     };
 
-    this.resize(menuState.state.zoom);
+    this.applyPopupWidth(menuState.state.popupWidth);
 
     return menuState;
   }
 
-  private resize(zoom: number) {
-    if (zoom !== 100) {
-      document.body.style.marginBottom = 480 * (zoom / 100 - 1) + "px";
-      document.body.style.marginRight = 320 * (zoom / 100 - 1) + "px";
-      document.body.style.transform = "scale(" + zoom / 100 + ")";
+  private applyPopupWidth(width: PopupWidth) {
+    document.documentElement.style.setProperty("--popup-width", `${width}px`);
+    document.body.style.width = `${width}px`;
+    document.body.style.marginBottom = "";
+    document.body.style.marginRight = "";
+    document.body.style.transform = "";
+
+    const query = new URLSearchParams(window.location.search);
+    if (query.get("popup")) {
+      chrome.windows.update(chrome.windows.WINDOW_ID_CURRENT, {
+        width: width + (window.outerWidth - window.innerWidth),
+      });
     }
   }
 }

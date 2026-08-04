@@ -20,6 +20,7 @@ interface UserSettingsData {
   oneDriveRevoked?: boolean;
   oneDriveRefreshToken?: string;
   oneDriveToken?: string;
+  popupWidth?: number;
   storageLocation?: StorageLocation;
 
   // syncable settings
@@ -50,6 +51,7 @@ const LocalUserSettingsDataKeys = [
   "oneDriveRevoked",
   "oneDriveRefreshToken",
   "oneDriveToken",
+  "popupWidth",
   "storageLocation",
 ];
 
@@ -186,7 +188,12 @@ type BooleanOption =
   | "oneDriveRevoked"
   | "smartFilter";
 
-type NumberOption = "autolock" | "lastRemindingBackupTime" | "offset" | "zoom";
+type NumberOption =
+  | "autolock"
+  | "lastRemindingBackupTime"
+  | "offset"
+  | "popupWidth"
+  | "zoom";
 
 type JSONOption = "advisorIgnoreList";
 
@@ -206,9 +213,13 @@ function isBooleanOption(key: string): key is BooleanOption {
 }
 
 function isNumberOption(key: string): key is NumberOption {
-  return ["autolock", "lastRemindingBackupTime", "offset", "zoom"].includes(
-    key
-  );
+  return [
+    "autolock",
+    "lastRemindingBackupTime",
+    "offset",
+    "popupWidth",
+    "zoom",
+  ].includes(key);
 }
 
 function isJSONOption(key: string): key is JSONOption {

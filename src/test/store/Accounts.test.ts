@@ -4,7 +4,7 @@ import * as sinon from "sinon";
 
 import { OTPType } from "../../models/otp";
 import { UserSettings } from "../../models/settings";
-import { updateCodes } from "../../store/Accounts";
+import { reorderEntries, updateCodes } from "../../store/Accounts";
 
 mocha.setup("bdd");
 
@@ -66,5 +66,35 @@ describe("Accounts.updateCodes", () => {
     updateCodes(createState(entry));
 
     assert.equal((entry.generate as sinon.SinonSpy).callCount, 0);
+  });
+});
+
+describe("Accounts.reorderEntries", () => {
+  const createEntry = (hash: string, index: number) =>
+    ({ hash, index } as OTPEntryInterface);
+
+  it("reorders entries by hash and updates their indexes", () => {
+    const first = createEntry("first", 0);
+    const second = createEntry("second", 1);
+    const third = createEntry("third", 2);
+
+    const result = reorderEntries(
+      [first, second, third],
+      ["third", "first", "second"]
+    );
+
+    assert.deepEqual(result, [third, first, second]);
+    assert.deepEqual(
+      result?.map((entry) => entry.index),
+      [0, 1, 2]
+    );
+  });
+
+  it("rejects incomplete, duplicate, or unknown hashes", () => {
+    const entries = [createEntry("first", 0), createEntry("second", 1)];
+
+    assert.isNull(reorderEntries(entries, ["first"]));
+    assert.isNull(reorderEntries(entries, ["first", "first"]));
+    assert.isNull(reorderEntries(entries, ["first", "unknown"]));
   });
 });

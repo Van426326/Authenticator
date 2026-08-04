@@ -1,12 +1,8 @@
 <template>
   <header class="header">
-    <span class="header-title" v-on:dblclick="popOut()">{{
-      i18n.extName
-    }}</span>
-    <div v-show="!isPopup()">
+    <div class="header-actions header-actions--start">
       <button
         class="icon icon-button"
-        id="i-menu"
         type="button"
         v-bind:title="i18n.settings"
         v-bind:aria-label="i18n.settings"
@@ -17,18 +13,6 @@
       </button>
       <button
         class="icon icon-button"
-        id="i-plus"
-        type="button"
-        v-bind:title="i18n.add_code"
-        v-bind:aria-label="i18n.add_code"
-        v-on:click="showInfo('AddMethodPage')"
-        v-show="style.isEditing"
-      >
-        <IconPlus />
-      </button>
-      <button
-        class="icon icon-button"
-        id="i-lock"
         type="button"
         v-bind:title="i18n.lock"
         v-bind:aria-label="i18n.lock"
@@ -39,21 +23,34 @@
       </button>
       <div
         class="icon sync-status"
-        id="i-sync"
         role="status"
         v-bind:aria-label="i18n.storage_sync_info"
-        v-bind:style="{
-          left: !!defaultEncryption ? '76px' : '48px',
-        }"
         v-show="
           (dropboxToken || driveToken || oneDriveToken) && !style.isEditing
         "
       >
         <IconSync />
       </div>
+    </div>
+
+    <div class="header-brand" v-on:dblclick="popOut()">
+      <span class="header-brand__mark" aria-hidden="true">A</span>
+      <span class="header-title">{{ i18n.extName }}</span>
+    </div>
+
+    <div class="header-actions header-actions--end">
       <button
         class="icon icon-button"
-        id="i-qr"
+        type="button"
+        v-bind:title="i18n.add_secret"
+        v-bind:aria-label="i18n.add_secret"
+        v-on:click="showInfo('AddAccountPage')"
+        v-show="!style.isEditing"
+      >
+        <IconPlus />
+      </button>
+      <button
+        class="icon icon-button"
         type="button"
         v-bind:title="i18n.add_qr"
         v-bind:aria-label="i18n.add_qr"
@@ -64,7 +61,6 @@
       </button>
       <button
         class="icon icon-button"
-        id="i-edit"
         type="button"
         v-bind:title="i18n.edit"
         v-bind:aria-label="i18n.edit"
@@ -129,12 +125,15 @@ export default Vue.extend({
       this.$store.commit("style/showMenu");
     },
     showInfo(page: string) {
-      if (page === "AddMethodPage") {
+      if (page === "AddMethodPage" || page === "AddAccountPage") {
         if (
           this.$store.state.menu.enforcePassword &&
           !this.$store.state.accounts.defaultEncryption
         ) {
           page = "SetPasswordPage";
+        } else if (this.$store.getters["accounts/currentlyEncrypted"]) {
+          this.$store.commit("notification/alert", this.i18n.phrase_incorrect);
+          return;
         }
       }
       this.$store.commit("style/showInfo");

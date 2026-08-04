@@ -1,7 +1,7 @@
 {
-  "name": "authenticator-extension",
+  "name": "modern-authenticator-extension",
   "version": "0.1.0",
-  "description": "Authenticator generates 2-Step Verification codes in your browser.",
+  "description": "A modern, privacy-focused browser authenticator with refined UX and efficient OTP refresh.",
   "scripts": {
     "compile": "bash scripts/build.sh firefox",
     "dev:chrome": "npm run pretest && webpack --config ./webpack.watch.js",
@@ -14,14 +14,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Authenticator-Extension/Authenticator.git"
+    "url": "git+https://github.com/Van426326/Authenticator.git"
   },
-  "author": "Authenticator Extension",
+  "author": "Van426326 and Authenticator Extension contributors",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Authenticator-Extension/Authenticator/issues"
+    "url": "https://github.com/Van426326/Authenticator/issues"
   },
-  "homepage": "https://github.com/Authenticator-Extension/Authenticator#readme",
+  "homepage": "https://github.com/Van426326/Authenticator#readme",
   "devDependencies": {
     "@types/argon2-browser": "^1.18.1",
     "@types/chai": "^4.2.14",

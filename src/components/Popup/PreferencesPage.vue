@@ -13,21 +13,13 @@
       <option value="flat">{{ i18n.theme_flat }}</option>
     </a-select-input>
     <a-select-input
-      :label="i18n.scale"
-      v-model="zoom"
+      :label="i18n.popup_width"
+      v-model.number="popupWidth"
       style="margin-left: 10px"
     >
-      <option value="125">125%</option>
-      <option value="100">100%</option>
-      <option value="90">90%</option>
-      <option value="80">80%</option>
-      <option value="67">67%</option>
-      <option value="57">57%</option>
-      <option value="50">50%</option>
-      <option value="40">40%</option>
-      <option value="33">33%</option>
-      <option value="25">25%</option>
-      <option value="20">20%</option>
+      <option :value="300">{{ i18n.width_narrow }}</option>
+      <option :value="360">{{ i18n.width_default }}</option>
+      <option :value="440">{{ i18n.width_wide }}</option>
     </a-select-input>
     <a-toggle-input :label="i18n.use_autofill" v-model="useAutofill" />
     <a-toggle-input
@@ -67,12 +59,12 @@ import { UserSettings } from "../../models/settings";
 
 export default Vue.extend({
   computed: {
-    zoom: {
+    popupWidth: {
       get(): number {
-        return this.$store.state.menu.zoom;
+        return this.$store.state.menu.popupWidth;
       },
-      set(zoom: number) {
-        this.$store.commit("menu/setZoom", zoom);
+      set(width: number) {
+        this.$store.commit("menu/setPopupWidth", Number(width));
       },
     },
     useAutofill: {

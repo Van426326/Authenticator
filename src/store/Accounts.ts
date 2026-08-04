@@ -10,6 +10,32 @@ import { DataType } from "../models/otp";
 
 const LegacyEncryption = "LegacyEncryption";
 const generatedTimeSteps = new WeakMap<OTPEntryInterface, string>();
+let reorderPersistence: Promise<void> = Promise.resolve();
+
+export function reorderEntries(
+  entries: OTPEntryInterface[],
+  orderedHashes: string[]
+): OTPEntryInterface[] | null {
+  if (entries.length !== orderedHashes.length) {
+    return null;
+  }
+
+  const entriesByHash = new Map(entries.map((entry) => [entry.hash, entry]));
+  const uniqueHashes = new Set(orderedHashes);
+  if (
+    entriesByHash.size !== entries.length ||
+    uniqueHashes.size !== orderedHashes.length ||
+    orderedHashes.some((hash) => !entriesByHash.has(hash))
+  ) {
+    return null;
+  }
+
+  return orderedHashes.map((hash, index) => {
+    const entry = entriesByHash.get(hash) as OTPEntryInterface;
+    entry.index = index;
+    return entry;
+  });
+}
 
 export function updateCodes(state: AccountsState) {
   const offset = Number(UserSettings.items.offset) || 0;
@@ -102,11 +128,7 @@ export class Accounts implements Module {
           return false;
         },
         entries(state: AccountsState) {
-          const pinnedEntries = state.entries.filter((entry) => entry.pinned);
-          const unpinnedEntries = state.entries.filter(
-            (entry) => !entry.pinned
-          );
-          return [...pinnedEntries, ...unpinnedEntries];
+          return state.entries;
         },
       },
       mutations: {
@@ -126,15 +148,31 @@ export class Accounts implements Module {
             0,
             state.entries.splice(opts.from, 1)[0]
           );
-
-          for (let i = 0; i < state.entries.length; i++) {
-            if (state.entries[i].index !== i) {
-              state.entries[i].index = i;
-            }
+          state.entries.forEach((entry, index) => (entry.index = index));
+        },
+        reorderCodes(state: AccountsState, orderedHashes: string[]) {
+          const reorderedEntries = reorderEntries(state.entries, orderedHashes);
+          if (reorderedEntries) {
+            state.entries = reorderedEntries;
           }
         },
         pinEntry(state: AccountsState, entry: OTPEntryInterface) {
-          state.entries[entry.index].pinned = !entry.pinned;
+          const currentIndex = state.entries.findIndex(
+            (candidate) => candidate.hash === entry.hash
+          );
+          if (currentIndex === -1) {
+            return;
+          }
+
+          const target = state.entries[currentIndex];
+          target.pinned = !target.pinned;
+          if (target.pinned) {
+            state.entries.splice(currentIndex, 1);
+            state.entries.unshift(target);
+          }
+          state.entries.forEach((candidate, index) => {
+            candidate.index = index;
+          });
         },
         updateExport(
           state: AccountsState,
@@ -167,6 +205,26 @@ export class Accounts implements Module {
         },
       },
       actions: {
+        reorderCodes: async (
+          context: ActionContext<AccountsState, object>,
+          orderedHashes: string[]
+        ) => {
+          const reorderedEntries = reorderEntries(
+            context.state.entries,
+            orderedHashes
+          );
+          if (!reorderedEntries) {
+            return false;
+          }
+
+          context.commit("reorderCodes", orderedHashes);
+          const snapshot = context.state.entries.slice();
+          reorderPersistence = reorderPersistence
+            .catch(() => undefined)
+            .then(() => EntryStorage.set(snapshot));
+          await reorderPersistence;
+          return true;
+        },
         deleteCode: async (
           state: ActionContext<AccountsState, object>,
           hash: string
@@ -191,6 +249,10 @@ export class Accounts implements Module {
           entry: OTPEntryInterface
         ) => {
           state.state.entries.unshift(entry);
+          state.state.entries.forEach((candidate, index) => {
+            candidate.index = index;
+          });
+          await EntryStorage.set(state.state.entries);
           state.commit(
             "updateExport",
             await EntryStorage.getExport(state.state.entries)

@@ -31,7 +31,7 @@ interface VuexConstructor {
 
 interface MenuState {
   version: string;
-  zoom: number;
+  popupWidth: 300 | 360 | 440;
   autolock: number;
   useAutofill: boolean;
   smartFilter: boolean;

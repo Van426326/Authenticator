@@ -3,6 +3,48 @@
     id="codes"
     v-bind:class="{ filter: shouldFilter && filter, search: showSearch }"
   >
+    <div class="quick-settings" v-bind:aria-label="i18n.settings">
+      <button
+        class="theme-shortcut"
+        type="button"
+        v-bind:title="i18n.theme"
+        v-bind:aria-label="i18n.theme"
+        v-on:click="toggleTheme()"
+      >
+        <span class="theme-swatch" aria-hidden="true"></span>
+        <span>{{ theme === "dark" ? i18n.theme_dark : i18n.theme_light }}</span>
+      </button>
+      <div
+        class="width-presets"
+        role="group"
+        v-bind:aria-label="i18n.popup_width"
+      >
+        <button
+          type="button"
+          v-bind:class="{ active: popupWidth === 300 }"
+          v-bind:aria-pressed="popupWidth === 300"
+          v-on:click="setPopupWidth(300)"
+        >
+          {{ i18n.width_narrow }}
+        </button>
+        <button
+          type="button"
+          v-bind:class="{ active: popupWidth === 360 }"
+          v-bind:aria-pressed="popupWidth === 360"
+          v-on:click="setPopupWidth(360)"
+        >
+          {{ i18n.width_default }}
+        </button>
+        <button
+          type="button"
+          v-bind:class="{ active: popupWidth === 440 }"
+          v-bind:aria-pressed="popupWidth === 440"
+          v-on:click="setPopupWidth(440)"
+        >
+          {{ i18n.width_wide }}
+        </button>
+      </div>
+    </div>
     <!-- Filter -->
     <button
       class="under-header"
@@ -30,6 +72,7 @@
     </div>
     <!-- Entries -->
     <div
+      class="entries-list"
       v-dragula
       drake="entryDrake"
       v-on:keydown.down="focusNextEntry()"
@@ -51,12 +94,14 @@
         v-if="entries.length === 0 && initComplete"
       >
         <IconKey />
-        <p>
-          {{ i18n.no_entires }}
-          <a href="#" v-on:click="openLink('https://otp.ee/quickstart')">{{
-            i18n.learn_more
-          }}</a>
-        </p>
+        <p>{{ i18n.no_entires }}</p>
+        <button
+          class="empty-primary-action"
+          type="button"
+          v-on:click="openManualEntry()"
+        >
+          {{ i18n.add_secret }}
+        </button>
       </div>
     </div>
   </div>
@@ -65,7 +110,6 @@
 import Vue from "vue";
 import { mapState, mapGetters } from "vuex";
 import { OTPEntry } from "../../models/otp";
-import { EntryStorage } from "../../models/storage";
 
 import EntryComponent from "./EntryComponent.vue";
 
@@ -74,6 +118,7 @@ import IconKey from "../../../svg/key-solid.svg";
 
 const stateComputed = {
   ...mapState("accounts", ["filter", "showSearch", "initComplete"]),
+  ...mapState("menu", ["theme", "popupWidth"]),
   ...mapGetters("accounts", ["shouldFilter", "entries"]),
 };
 
@@ -99,10 +144,32 @@ export default Vue.extend({
     },
   },
   methods: {
-    openLink(url: string) {
-      window.open(url, "_blank");
-      return;
+    openManualEntry() {
+      if (
+        this.$store.state.menu.enforcePassword &&
+        !this.$store.state.accounts.defaultEncryption
+      ) {
+        this.$store.commit("style/showInfo");
+        this.$store.commit("currentView/changeView", "SetPasswordPage");
+        return;
+      }
+      if (this.$store.getters["accounts/currentlyEncrypted"]) {
+        this.$store.commit("notification/alert", this.i18n.phrase_incorrect);
+        return;
+      }
+      this.$store.commit("style/showInfo");
+      this.$store.commit("currentView/changeView", "AddAccountPage");
     },
+    toggleTheme() {
+      this.$store.commit(
+        "menu/setTheme",
+        this.theme === "dark" ? "normal" : "dark"
+      );
+    },
+    setPopupWidth(width: number) {
+      this.$store.commit("menu/setPopupWidth", width);
+    },
+
     isMatchedEntry(entry: OTPEntry) {
       return this.matchedEntryHashes.has(entry.hash);
     },
@@ -166,45 +233,41 @@ export default Vue.extend({
     focusNextEntry() {
       const nextIndex = this.findNextEntryIndex(false);
       document
-        .querySelector<HTMLLinkElement>(`.entry:nth-child(${nextIndex + 1})`)
+        .querySelector<HTMLElement>(`.entry:nth-child(${nextIndex + 1})`)
         ?.focus();
     },
     focusLastEntry() {
       const lastIndex = this.entries.length - 1 - this.findNextEntryIndex(true);
       document
-        .querySelector<HTMLLinkElement>(`.entry:nth-child(${lastIndex + 1})`)
+        .querySelector<HTMLElement>(`.entry:nth-child(${lastIndex + 1})`)
         ?.focus();
+    },
+    async handleDrop({ target }: { target?: Element }) {
+      const container =
+        target instanceof Element && target.classList.contains("entries-list")
+          ? target
+          : this.$el.querySelector(".entries-list");
+      if (!container) {
+        return;
+      }
+
+      const orderedHashes = Array.from(
+        container.querySelectorAll<HTMLElement>(":scope > .entry")
+      )
+        .map((element) => element.dataset.entryHash)
+        .filter((hash): hash is string => Boolean(hash));
+      await this.$store.dispatch("accounts/reorderCodes", orderedHashes);
     },
   },
   created() {
-    // Don't drag if !isEditing
     this.$dragula.$service.options("entryDrake", {
-      invalid: () => {
-        if (!this.$store.state.style.style.isEditing) {
-          return true;
-        } else {
-          return false;
-        }
-      },
+      moves: (_element: Element, _source: Element, handle: Element) =>
+        Boolean(handle?.closest(".movehandle")),
     });
-
-    // Update entry index if dragged
-    this.$dragula.$service.eventBus.$on(
-      "dropModel",
-      async ({
-        dragIndex,
-        dropIndex,
-      }: {
-        dragIndex: number;
-        dropIndex: number;
-      }) => {
-        this.$store.commit("accounts/moveCode", {
-          from: dragIndex,
-          to: dropIndex,
-        });
-        await EntryStorage.set(this.$store.state.accounts.entries);
-      }
-    );
+    this.$dragula.$service.eventBus.$on("dropModel", this.handleDrop);
+  },
+  beforeDestroy() {
+    this.$dragula.$service.eventBus.$off("dropModel", this.handleDrop);
   },
   components: {
     EntryComponent,

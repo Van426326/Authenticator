@@ -1,11 +1,13 @@
 # Security Policy
 
-## Supported Versions
+## Supported versions
 
-We support the latest versions published on the Chrome, Firefox, and Edge extension stores.
+This repository supports the latest source revision on the `modern-ui-performance` branch. Builds distributed by other projects or browser stores are outside this fork's support scope.
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
-Report potential vulnerabilities privately via [this form](https://github.com/Authenticator-Extension/Authenticator/security/advisories/new).
-Where appropriate, include a proof-of-concept and reproduction steps.
-We strive to provide an initial response within five days, but as this is a volunteer-run project, we make no guarantees.
+Do not publish authentication secrets, unencrypted backups, API credentials, or exploit details in a public issue.
+
+Report a potential vulnerability privately through [GitHub Security Advisories](https://github.com/Van426326/Authenticator/security/advisories/new). Include affected versions, reproduction steps, impact, and a minimal proof of concept when appropriate.
+
+This is a volunteer-maintained fork, so response and remediation times are not guaranteed.

@@ -12,8 +12,18 @@
   display: none;
 }
 
+:root {
+  --popup-width: 360px;
+  --header-height: 52px;
+}
+
+html,
 body {
-  width: 320px;
+  min-height: 480px;
+}
+
+body {
+  width: var(--popup-width);
   height: 480px;
   transform-origin: left top;
   overflow: hidden;
@@ -81,27 +91,70 @@ svg {
 
 // Header
 .header {
-  height: 46px;
-  line-height: 46px;
+  height: var(--header-height);
+  line-height: var(--header-height);
   position: relative;
   text-align: center;
-  font-size: 15px;
-  font-weight: 650;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
   @include themify($themes) {
     color: themed("black-1");
     background: themed("white-1");
     border-bottom: themed("grey-2") 1px solid;
   }
 
+  .header-brand {
+    position: absolute;
+    left: 50%;
+    display: inline-flex;
+    height: 100%;
+    align-items: center;
+    gap: 7px;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  .header-brand__mark {
+    display: grid;
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    place-items: center;
+    background: linear-gradient(145deg, #3b82f6, #1d4ed8);
+    box-shadow: 0 5px 12px rgba(37, 99, 235, 0.24);
+    color: white;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
   .header-title {
     letter-spacing: 0.01em;
   }
 
+  .header-actions {
+    position: absolute;
+    top: 10px;
+    z-index: 1;
+    display: flex;
+    gap: 2px;
+
+    &--start {
+      left: 10px;
+    }
+
+    &--end {
+      right: 10px;
+    }
+  }
+
   .icon {
     @include hover-black;
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
     cursor: pointer;
 
     &:hover {
@@ -120,62 +173,85 @@ svg {
   }
 }
 
-#i-menu {
+#i-close {
   position: absolute;
   left: 10px;
-  bottom: 8px;
+  bottom: 10px;
 }
 
-#i-lock {
-  position: absolute;
-  left: 42px;
-  bottom: 8px;
-}
+// Quick display settings
+.quick-settings {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
 
-#i-sync {
-  position: absolute;
-  left: 74px;
-  bottom: 8px;
-  cursor: default;
-  @include themify($themes) {
-    fill: themed("grey-2");
+  button {
+    min-height: 32px;
+    border: 0;
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 650;
+    @include themify($themes) {
+      color: themed("grey-1");
+      background: themed("white-1");
+    }
   }
 
-  &:hover {
-    svg {
-      fill: inherit;
+  .theme-shortcut {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 10px;
+    white-space: nowrap;
+  }
+
+  .theme-swatch {
+    width: 15px;
+    height: 15px;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+  }
+
+  .width-presets {
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 11px;
+    @include themify($themes) {
+      background: themed("grey-3");
+    }
+
+    button {
+      min-width: 38px;
+      min-height: 28px;
+      padding: 0 8px;
+      background: transparent;
+
+      &.active {
+        @include themify($themes) {
+          color: themed("blue-1");
+          background: themed("white-1");
+        }
+        box-shadow: 0 2px 7px rgba(15, 23, 42, 0.1);
+      }
     }
   }
 }
 
-#i-plus,
-#i-qr {
-  position: absolute;
-  right: 42px;
-  bottom: 8px;
-}
-
-#i-edit {
-  position: absolute;
-  right: 10px;
-  bottom: 8px;
-}
-
-#i-close {
-  position: absolute;
-  left: 10px;
-  bottom: 8px;
-}
-
 // Search & Filter
 .under-header {
-  width: calc(100% - 20px);
-  height: 34px;
-  padding: 0 12px;
-  margin-left: 10px;
+  width: 100%;
+  height: 38px;
+  padding: 0 13px;
+  margin: 0 0 8px;
   border: 0;
-  font-size: 12px;
-  line-height: 34px;
+  border-radius: 11px;
+  font-size: 13px;
+  line-height: 38px;
   cursor: pointer;
   display: none;
 }
@@ -197,8 +273,8 @@ svg {
   @include themify($themes) {
     background: themed("white-1");
     border: themed("grey-2") 1px solid;
-    border-top: none;
   }
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 
   &:hover {
     @include themify($themes) {
@@ -241,13 +317,13 @@ svg {
 
 // Codes
 #codes {
-  height: 434px;
+  height: calc(480px - var(--header-height));
   overflow-x: hidden;
-  overflow-y: hidden;
+  overflow-y: auto;
   @include themify($themes) {
     background: themed("grey-background");
   }
-  padding-right: 10px;
+  padding: 10px 10px 16px;
 
   .deleteAction {
     @include themify($themes) {
@@ -262,7 +338,6 @@ svg {
 
   &:hover,
   &:focus-within {
-    padding-right: 0;
     overflow-y: auto;
   }
 
@@ -284,7 +359,6 @@ svg {
     }
 
     .issuerEdit,
-    .movehandle,
     #add {
       display: block;
     }
@@ -338,36 +412,62 @@ svg {
     text-align: center;
 
     svg {
-      width: 48px;
-      height: 48px;
-      margin: 20px;
+      width: 44px;
+      height: 44px;
+      margin: 24px 20px 14px;
+      opacity: 0.72;
+    }
+
+    p {
+      max-width: 290px;
+      margin: 0 auto;
+      line-height: 1.55;
+    }
+
+    .empty-primary-action {
+      min-height: 38px;
+      margin-top: 18px;
+      padding: 0 16px;
+      border: 0;
+      border-radius: 10px;
+      background: linear-gradient(145deg, #3b82f6, #2563eb);
+      box-shadow: 0 7px 16px rgba(37, 99, 235, 0.24);
+      color: white;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
     }
   }
 }
 
 .entry {
-  margin: 9px 0 9px 10px;
-  padding: 12px;
+  margin: 0 0 9px;
+  padding: 14px 44px;
   @include themify($themes) {
     border: themed("grey-2") 1px solid;
     background: themed("white-1");
   }
-  border-radius: 12px;
+  border-radius: 15px;
   position: relative;
   display: block;
-  box-shadow: 0 3px 10px rgba(24, 38, 60, 0.06);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04),
+    0 7px 20px rgba(15, 23, 42, 0.045);
   cursor: pointer;
-  transition: border-color 120ms ease, box-shadow 120ms ease,
-    transform 120ms ease;
+  transition: border-color 140ms ease, box-shadow 140ms ease,
+    background-color 140ms ease;
 
   &:hover,
   &:focus-visible {
-    box-shadow: 0 8px 20px rgba(24, 38, 60, 0.12);
-    transform: translateY(-1px);
+    @include themify($themes) {
+      border-color: themed("blue-1");
+    }
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05),
+      0 10px 26px rgba(15, 23, 42, 0.09);
   }
 
   .issuer {
     font-size: 12px;
+    font-weight: 600;
     @include themify($themes) {
       color: themed("black-1");
     }
@@ -377,7 +477,10 @@ svg {
   }
 
   .code {
-    font-size: 34px;
+    margin-top: 3px;
+    font-size: 32px;
+    font-weight: 500;
+    letter-spacing: 0.035em;
     @include themify($themes) {
       color: themed("blue-1");
     }
@@ -463,15 +566,23 @@ svg {
 
   .movehandle {
     @include themify($themes) {
-      @include icon-special(24px, themed("grey-2"));
+      @include icon-special(15px, themed("grey-1"));
+      background: themed("grey-3");
     }
-    height: 98px;
-    line-height: 98px;
-    right: 10px;
-    top: 0;
     position: absolute;
-    cursor: move;
-    display: none;
+    top: 50%;
+    left: 10px;
+    display: grid;
+    width: 24px;
+    height: 38px;
+    border: 0;
+    border-radius: 8px;
+    transform: translateY(-50%);
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
   }
 
   .showqr,
@@ -540,10 +651,6 @@ svg {
   .pin {
     opacity: 1;
   }
-
-  .movehandle {
-    display: none !important;
-  }
 }
 
 .no-copy {
@@ -561,9 +668,10 @@ svg {
 // Modals
 #notification {
   position: absolute;
-  left: 60px;
+  left: 50%;
   top: -1000px;
-  width: 200px;
+  width: min(240px, calc(100% - 40px));
+  transform: translateX(-50%);
   height: 60px;
   line-height: 60px;
   text-align: center;
@@ -589,7 +697,7 @@ svg {
 
 .message-box {
   position: absolute;
-  width: 300px;
+  width: calc(100% - 20px);
   padding: 10px;
   @include themify($themes) {
     color: themed("black-1");
@@ -622,7 +730,7 @@ svg {
 }
 
 #qr {
-  width: 320px;
+  width: 100%;
   height: 480px;
   top: -1000px;
   left: 0;
@@ -662,7 +770,7 @@ svg {
 #info {
   position: absolute;
   height: 460px;
-  width: 300px;
+  width: calc(100% - 20px);
   padding: 10px;
   @include themify($themes) {
     color: themed("black-1");
@@ -899,7 +1007,7 @@ svg {
 
 // Menu
 #menu {
-  width: 320px;
+  width: 100%;
   height: 480px;
   position: absolute;
   left: -1000px;
@@ -1108,6 +1216,24 @@ svg {
   }
 }
 
+// Responsive popup widths
+@media (max-width: 330px) {
+  .header-title {
+    display: none;
+  }
+
+  .quick-settings {
+    .theme-shortcut span:last-child {
+      display: none;
+    }
+
+    .width-presets button {
+      min-width: 36px;
+      padding: 0 6px;
+    }
+  }
+}
+
 // Misc
 @font-face {
   font-family: "Droid Sans Mono";
@@ -1119,11 +1245,22 @@ svg {
 }
 
 .gu-mirror {
-  display: none;
+  position: fixed !important;
+  z-index: 9999 !important;
+  margin: 0 !important;
+  opacity: 0.94;
+  pointer-events: none;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.2) !important;
+  transform: scale(1.015);
+}
+
+.gu-transit {
+  opacity: 0.28;
+  box-shadow: none !important;
 }
 
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
   @include themify($themes) {
     background: themed("grey-3");
   }

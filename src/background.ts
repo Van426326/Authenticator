@@ -9,6 +9,7 @@ import {
   okToInjectContentScript,
 } from "./utils";
 import { CodeState } from "./models/otp";
+import { POPUP_HEIGHT, resolvePopupWidth } from "./models/display";
 
 import { getOTPAuthPerLineFromOPTAuthMigration } from "./models/migration";
 import { isChrome, isFirefox } from "./browser";
@@ -432,28 +433,6 @@ async function uploadBackup(service: string) {
   }
 }
 
-// Show issue page after first install
-chrome.runtime.onInstalled.addListener(async (details) => {
-  if (details.reason !== "install") {
-    return;
-  } else if (await ManagedStorage.get("disableInstallHelp", false)) {
-    return;
-  }
-
-  let url: string | null = null;
-
-  if (isChrome) {
-    url = "https://otp.ee/chromeissues";
-  }
-
-  if (url) {
-    chrome.tabs.create({ url, active: true });
-  }
-
-  // https://stackoverflow.com/a/56483156
-  return true;
-});
-
 chrome.commands.onCommand.addListener(async (command: string) => {
   const { cachedPassphrase, cachedKeyId } = await chrome.storage.session.get();
 
@@ -579,8 +558,11 @@ async function updateContextMenu() {
             chrome.windows.create({
               url: chrome.runtime.getURL(popupUrl),
               type: windowType as chrome.windows.createTypeEnum,
-              height: 400,
-              width: 320,
+              height: POPUP_HEIGHT,
+              width: resolvePopupWidth(
+                UserSettings.items.popupWidth,
+                UserSettings.items.zoom
+              ),
             });
 
             // https://stackoverflow.com/a/56483156

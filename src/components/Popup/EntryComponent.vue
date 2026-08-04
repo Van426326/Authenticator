@@ -104,9 +104,15 @@
     >
       <IconPin />
     </button>
-    <div class="movehandle" aria-hidden="true">
+    <button
+      class="movehandle icon-button"
+      type="button"
+      v-bind:title="i18n.drag_to_reorder"
+      v-bind:aria-label="i18n.drag_to_reorder"
+      v-on:click.stop
+    >
       <IconBars />
-    </div>
+    </button>
   </div>
 </template>
 <script lang="ts">

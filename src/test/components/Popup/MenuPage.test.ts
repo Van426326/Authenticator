@@ -62,18 +62,6 @@ describe("MenuPage", () => {
     wrapper.find("[data-test='feedback']").trigger("click");
 
   describe("feedback button", () => {
-    // mocks the user agent for testing purposes
-    const mockUserAgent = (userAgent: string) => {
-      Object.defineProperty(global, "navigator", {
-        value: {
-          userAgent,
-        },
-        configurable: true,
-        enumerable: true,
-        writable: true,
-      });
-    };
-
     beforeEach(() => {
       wrapper = mount(MenuPage, {
         store,
@@ -81,49 +69,13 @@ describe("MenuPage", () => {
       });
     });
 
-    it("should open a new tab to the Chrome help page when the feedback button is clicked and the user agent is Chrome", async () => {
-      mockUserAgent(
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"
-      );
+    it("should open this fork's issue tracker", async () => {
       await clickFeedbackButton(wrapper);
       assert.ok(
-        chrome.tabs.create.withArgs({ url: "https://otp.ee/chromeissues" })
-          .calledOnce,
-        "Tab create should be called with the Chrome URL"
-      );
-    });
-
-    it("should open a new tab to the Edge help page when the feedback button is clicked and the user agent is Edge", async () => {
-      mockUserAgent(
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.74 Safari/537.36 Edg/79.0.309.43"
-      );
-      await clickFeedbackButton(wrapper);
-      assert.ok(
-        chrome.tabs.create.withArgs({ url: "https://otp.ee/edgeissues" })
-          .calledOnce,
-        "Tab create should be called with the Edge URL"
-      );
-    });
-
-    it("should open a new tab to the Firefox help page when the feedback button is clicked and the user agent is Firefox", async () => {
-      mockUserAgent(
-        "Mozilla/5.0 (Windows NT x.y; rv:10.0) Gecko/20100101 Firefox/10.0"
-      );
-      await clickFeedbackButton(wrapper);
-      assert.ok(
-        chrome.tabs.create.withArgs({ url: "https://otp.ee/firefoxissues" })
-          .calledOnce,
-        "Tab create should be called with the Firefox URL"
-      );
-    });
-
-    it("should open a new tab to the Chrome help page when the feedback button is clicked and the user agent is unknown", async () => {
-      mockUserAgent("Unknown");
-      await clickFeedbackButton(wrapper);
-      assert.ok(
-        chrome.tabs.create.withArgs({ url: "https://otp.ee/chromeissues" })
-          .called,
-        "Tab create should be called with the Chrome URL"
+        chrome.tabs.create.withArgs({
+          url: "https://github.com/Van426326/Authenticator/issues",
+        }).calledOnce,
+        "Tab create should open the fork issue tracker"
       );
     });
 

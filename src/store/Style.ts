@@ -73,6 +73,9 @@ export class Style implements Module {
         toggleEdit(state: StyleState) {
           state.style.isEditing = !state.style.isEditing;
         },
+        setEditing(state: StyleState, isEditing: boolean) {
+          state.style.isEditing = isEditing;
+        },
         toggleHotpDisabled(state: StyleState) {
           state.style.hotpDisabled = !state.style.hotpDisabled;
         },

@@ -520,5 +520,20 @@
   },
   "activate_auto_filter": {
     "message": "Warning: Smart filter loosely matches the domain name to an account. Always verify that you are on the correct website before entering a code!"
+  },
+  "popup_width": {
+    "message": "Extension width"
+  },
+  "width_narrow": {
+    "message": "Narrow"
+  },
+  "width_default": {
+    "message": "Default"
+  },
+  "width_wide": {
+    "message": "Wide"
+  },
+  "drag_to_reorder": {
+    "message": "Drag to reorder"
   }
 }
