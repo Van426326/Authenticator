@@ -6,6 +6,6 @@ gpg --quiet --batch --yes --decrypt --passphrase="$CREDS_FILE_PASSWORD" \
   --output $GITHUB_WORKSPACE/src/models/credentials.ts $GITHUB_WORKSPACE/scripts/credentials.ts.gpg
 
 # Build release
-bash scripts/build.sh prod
+npm run prod
 
 tar -cvzf release.tar.gz release/*

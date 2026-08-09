@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "description": "A modern, privacy-focused browser authenticator with refined UX and efficient OTP refresh.",
   "scripts": {
-    "compile": "bash scripts/build.sh firefox",
+    "compile": "node scripts/build.js firefox",
     "dev:chrome": "npm run pretest && webpack --config ./webpack.watch.js",
-    "chrome": "bash scripts/build.sh chrome",
-    "firefox": "bash scripts/build.sh firefox",
-    "edge": "bash scripts/build.sh edge",
-    "prod": "bash scripts/build.sh prod",
-    "pretest": "bash scripts/build.sh test",
+    "chrome": "node scripts/build.js chrome",
+    "firefox": "node scripts/build.js firefox",
+    "edge": "node scripts/build.js edge",
+    "prod": "node scripts/build.js prod",
+    "pretest": "node scripts/build.js test",
     "test": "node scripts/test-runner.js"
   },
   "repository": {

@@ -19,9 +19,11 @@
 
 ### 环境要求
 
-- Node.js 20
+- Node.js 20 或更高版本
 - npm
 - Git
+
+构建脚本可直接在 Windows Command Prompt、PowerShell、Linux 和 macOS 中运行；Windows 不需要额外安装 Bash 或 WSL。
 
 ### Chrome
 
