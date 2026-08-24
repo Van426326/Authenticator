@@ -1,11 +1,25 @@
 #!/bin/bash
-# This script builds for release and puts api secrets in relevant files
+set -euo pipefail
 
-# Insert secrets
-gpg --quiet --batch --yes --decrypt --passphrase="$CREDS_FILE_PASSWORD" \
-  --output $GITHUB_WORKSPACE/src/models/credentials.ts $GITHUB_WORKSPACE/scripts/credentials.ts.gpg
-
-# Build release
 npm run prod
 
-tar -cvzf release.tar.gz release/*
+VERSION="$(node -p 'require("./manifests/manifest-chrome.json").version')"
+TAG="v${VERSION}"
+ASSET_DIR="release-assets"
+
+rm -rf "$ASSET_DIR"
+mkdir -p "$ASSET_DIR"
+
+# Chrome extensions are platform-independent; the release workflow rebuilds
+# these assets on the named operating systems for platform-specific validation.
+for PLATFORM in macos windows; do
+  (
+    cd release/chrome
+    zip -qr "../../${ASSET_DIR}/authenticator-chrome-${PLATFORM}-${TAG}.zip" .
+  )
+done
+
+(
+  cd "$ASSET_DIR"
+  shasum -a 256 ./*.zip > SHA256SUMS.txt
+)

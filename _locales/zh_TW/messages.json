@@ -181,10 +181,6 @@
     "message": "注意！您的本地時鐘時間差異過大，請於效準時間後再進行操作。",
     "description": "Local Time is Too Far Off"
   },
-  "remind_backup": {
-    "message": "您是否為金鑰建立了備份？別等到為時已晚才建立！",
-    "description": "Remind Backup"
-  },
   "capture_failed": {
     "message": "讀取失敗，請於重新載入頁面後重試。",
     "description": "Capture Failed"
@@ -253,10 +249,6 @@
     "message": "顯示全部條目",
     "description": "Show all entries."
   },
-  "dropbox_risk": {
-    "message": "警告：備份檔案未加密，需自行承擔風險。",
-    "description": "Backup risk warning."
-  },
   "import_error_password": {
     "message": "您必須提供正確的密碼才能匯入備份。",
     "description": "Error password warning when import backups."
@@ -288,10 +280,6 @@
   "edit": {
     "message": "編輯",
     "description": "Edit"
-  },
-  "manual_dropbox": {
-    "message": "手動備份",
-    "description": "Manual backup"
   },
   "use_autofill": {
     "message": "啟用自動填充",
@@ -329,10 +317,6 @@
     "message": "平",
     "description": "Flat theme"
   },
-  "storage_sync_info": {
-    "message": "自動備份您的資料至第三方儲存服務。",
-    "description": "3rd party backup info"
-  },
   "browser_sync": {
     "message": "瀏覽器同步",
     "description": "Storage location"
@@ -341,26 +325,9 @@
     "message": "登入",
     "description": "Sign in to 3rd party storage services"
   },
-  "sign_in_business": {
-    "message": "登入（企業）",
-    "description": "Sign in to 3rd party storage services"
-  },
-  "onedrive_business_perms": {
-    "message": "為什麼企業賬戶需要更多權限？"
-  },
   "log_out": {
     "message": "登出",
     "description": "Sign out of 3rd party storage services"
-  },
-  "token_revoked": {
-    "message": "連接到您的 $SERVICE$ 帳戶時出現問題，請重試。",
-    "description": "Error authenticating to backup service. $SERVICE$ will be replaced with a proper noun (E.g.: 'Google Drive' or 'Dropbox')",
-    "placeholders": {
-      "service": {
-        "content": "$1",
-        "example": "Google Drive"
-      }
-    }
   },
   "otp_unsupported_warn": {
     "message": "您有一個或多個Steam或Blizzard帳戶。 未加密的備份將不使用標準化備份格式。",
@@ -476,9 +443,6 @@
   "permission_storage": {
     "message": "存取瀏覽器空間以便存放帳戶資訊"
   },
-  "permission_identity": {
-    "message": "允許登入第三方儲存服務。"
-  },
   "permission_alarms": {
     "message": "Allows auto-lock to work."
   },
@@ -493,24 +457,6 @@
   },
   "permission_sync_clock": {
     "message": "允許與 Google 連線校時。"
-  },
-  "permission_dropbox": {
-    "message": "允許備份到Dropbox."
-  },
-  "permission_dropbox_cannot_revoke": {
-    "message": "請先取消 Dropbox 備份"
-  },
-  "permission_drive": {
-    "message": "允許備份到Google Drive."
-  },
-  "permission_drive_cannot_revoke": {
-    "message": "請先取消 Google Drive 備份"
-  },
-  "permission_onedrive": {
-    "message": "允許備份到OneDrive."
-  },
-  "permission_onedrive_cannot_revoke": {
-    "message": "請先取消 OneDrvie 備份"
   },
   "permission_unknown_permission": {
     "message": "未知的權限。您如果看到這個訊息，請回報程式異常。"
@@ -535,5 +481,170 @@
   },
   "drag_to_reorder": {
     "message": "拖曳調整順序"
+  },
+  "permission_github_api": {
+    "message": "GitHub API and private repository access"
+  },
+  "github_sync_title": {
+    "message": "GitHub Sync"
+  },
+  "github_status": {
+    "message": "Status"
+  },
+  "github_last_sync": {
+    "message": "Last sync"
+  },
+  "github_sync_info": {
+    "message": "Synchronize accounts through a private GitHub repository."
+  },
+  "github_owner": {
+    "message": "Owner"
+  },
+  "github_repository": {
+    "message": "Repository"
+  },
+  "github_repo_requirement": {
+    "message": "Synchronization requires a private GitHub repository that is already initialized (non-empty)."
+  },
+  "github_pat": {
+    "message": "Fine-grained personal access token (PAT)"
+  },
+  "github_remember_pat": {
+    "message": "Remember this PAT in this browser (local storage)"
+  },
+  "github_pat_storage": {
+    "message": "Remember PAT stores the token in this browser's local storage so you can sync after closing the popup. Uncheck it to keep the token only for this browser session."
+  },
+  "github_pat_permissions": {
+    "message": "The personal access token needs Contents read and write access to the repository."
+  },
+  "github_branch": {
+    "message": "Branch"
+  },
+  "github_sync_password": {
+    "message": "Sync password"
+  },
+  "github_sync_password_confirm": {
+    "message": "Confirm sync password"
+  },
+  "github_remember_password": {
+    "message": "Remember this sync password in this browser (local storage)"
+  },
+  "github_password_storage": {
+    "message": "Remember sync password stores the password and unlock key in this browser's local storage so you can sync again without retyping it. Uncheck it to keep them only for this browser session."
+  },
+  "github_encryption_mandatory": {
+    "message": "Encryption is always required for synchronized data; there is no unencrypted mode."
+  },
+  "github_password_warning": {
+    "message": "The sync password is stored only on this device when Remember sync password is checked. It is never uploaded to GitHub. Forgetting it on every device makes encrypted remote data unrecoverable."
+  },
+  "github_encryption_explanation": {
+    "message": "Only encrypted operation contents are uploaded. Git metadata and permanent commit history remain visible to anyone with repository access. Entry deletions are permanent; Forget removes only this device's local sync history and does not delete the GitHub repository."
+  },
+  "github_background": {
+    "message": "Run periodically in the background"
+  },
+  "github_interval": {
+    "message": "Interval in minutes (minimum 5)"
+  },
+  "github_connect": {
+    "message": "Connect"
+  },
+  "github_unlock": {
+    "message": "Unlock"
+  },
+  "github_working": {
+    "message": "Working…"
+  },
+  "github_sync_now": {
+    "message": "Sync now"
+  },
+  "github_disconnect": {
+    "message": "Disconnect"
+  },
+  "github_forget": {
+    "message": "Forget repository history"
+  },
+  "github_forget_confirm": {
+    "message": "This permanently deletes local sync history. Continue?"
+  },
+  "github_forget_confirm_again": {
+    "message": "Final confirmation: forget this repository and all local sync history?"
+  },
+  "github_open_repository": {
+    "message": "Open GitHub repository"
+  },
+  "github_conflicts": {
+    "message": "Conflicts requiring review"
+  },
+  "github_keep": {
+    "message": "Keep"
+  },
+  "github_details_head": {
+    "message": "Head"
+  },
+  "github_details_pending": {
+    "message": "Pending operations"
+  },
+  "github_details_rate_remaining": {
+    "message": "API rate remaining"
+  },
+  "github_details_rate_reset": {
+    "message": "Rate reset"
+  },
+  "github_status_token_required": {
+    "message": "A GitHub personal access token is required to continue. Enter a token with Contents read and write access."
+  },
+  "github_status_needs_sync_password": {
+    "message": "Enter the sync password for this repository to unlock encryption."
+  },
+  "github_status_rate_limited": {
+    "message": "GitHub API rate limit reached. Try again after the listed reset time."
+  },
+  "github_status_branch_protected": {
+    "message": "The synchronized branch is protected and the update was rejected. Review branch protection rules."
+  },
+  "github_status_history_rewritten": {
+    "message": "The remote history was rewritten. Sync stopped to avoid overwriting new entries. Check the documentation before continuing."
+  },
+  "github_status_repository_changed": {
+    "message": "The remote repository identity changed. This device's sync link is out of date; disconnect and reconnect to verify the repository."
+  },
+  "github_status_remote_missing": {
+    "message": "The synchronized branch or repository is missing. Confirm the repository exists and the sync branch still holds an encrypted config."
+  },
+  "github_status_permission_required": {
+    "message": "GitHub API access is required. Grant the https://api.github.com/* permission to continue."
+  },
+  "github_status_auth_failed": {
+    "message": "The GitHub token was rejected. Check the token and its Contents read/write permissions."
+  },
+  "github_status_offline": {
+    "message": "GitHub is unreachable right now. Sync will retry automatically."
+  },
+  "github_status_unsupported_server": {
+    "message": "The configured GitHub repository is not supported for sync (for example it is public). Use a private repository."
+  },
+  "github_status_remote_corrupt": {
+    "message": "The remote sync data is malformed or inconsistent. The integrity of the repository could not be verified."
+  },
+  "github_status_generic_error": {
+    "message": "GitHub sync failed. Check the repository, token, and network connection, then try again."
+  },
+  "github_error_invalid_identity": {
+    "message": "Check the GitHub owner and repository names."
+  },
+  "github_error_missing_token": {
+    "message": "A fine-grained personal access token is required."
+  },
+  "github_error_password_mismatch": {
+    "message": "The sync password and its confirmation do not match."
+  },
+  "github_error_create_password": {
+    "message": "Enter a new independent sync password to initialize this repository."
+  },
+  "github_error_config_race": {
+    "message": "Another device initialized this repository with a different sync password. Enter the current sync password and try again."
   }
 }

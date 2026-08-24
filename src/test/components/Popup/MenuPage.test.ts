@@ -10,7 +10,6 @@ import MenuPage from "../../../components/Popup/MenuPage.vue";
 
 import { Style } from "../../../store/Style";
 import { Accounts } from "../../../store/Accounts";
-import { Backup } from "../../../store/Backup";
 import { CurrentView } from "../../../store/CurrentView";
 import { Menu } from "../../../store/Menu";
 import { Notification } from "../../../store/Notification";
@@ -75,7 +74,7 @@ describe("MenuPage", () => {
         chrome.tabs.create.withArgs({
           url: "https://github.com/Van426326/Authenticator/issues",
         }).calledOnce,
-        "Tab create should open the fork issue tracker"
+        "Tab create should open the fork issue tracker",
       );
     });
 
@@ -88,7 +87,6 @@ describe("MenuPage", () => {
 
           store = new Vuex.Store({
             modules: {
-              backup: await new Backup().getModule(),
               currentView: new CurrentView().getModule(),
               notification: new Notification().getModule(),
               qr: new Qr().getModule(),
@@ -114,7 +112,7 @@ describe("MenuPage", () => {
         assert.ok(
           chrome.tabs.create.withArgs({ url: "https://authenticator.cc" })
             .called,
-          "Tab create should be called with the feedback URL"
+          "Tab create should be called with the feedback URL",
         );
       });
     });

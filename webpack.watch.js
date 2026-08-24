@@ -1,38 +1,32 @@
-// TODO: this is broken because webpack-extension-reloader does not support webpack 5. 
+const path = require("path");
+const { merge } = require("webpack-merge");
+const dev = require("./webpack.dev.js");
+const { exec } = require("child_process");
 
-const path = require('path');
-const merge = require('webpack-merge');
-const dev = require('./webpack.dev.js');
-const ExtensionReloader = require('webpack-extension-reloader');
-const {exec} = require('child_process');
-
-// after compiling, the tests will automatically be run each time a file change occurs
+// After compiling, automatically run the tests for each watched build.
 const runTestsAfterBuild = () => {
   return {
     apply: (compiler) => {
-      compiler.hooks.afterEmit.tap('AfterEmitPlugin', () => {
-        // leave as node otherwise browser does not launch
-        exec('node scripts/test-runner.js', (err, stdout, stderr) => {
+      compiler.hooks.afterEmit.tap("AfterEmitPlugin", () => {
+        // Leave as Node otherwise the browser does not launch.
+        exec("node scripts/test-runner.js", (_error, stdout, stderr) => {
           if (stdout) process.stdout.write(stdout);
           if (stderr) process.stderr.write(stderr);
         });
       });
-    }
-  }
+    },
+  };
 };
 
 module.exports = merge(dev, {
-  mode: 'development',
-  plugins: [
-    new ExtensionReloader(),
-    runTestsAfterBuild(),
-  ],
+  mode: "development",
+  plugins: [runTestsAfterBuild()],
   watch: true,
   watchOptions: {
-    ignored: /node_modules/
+    ignored: /node_modules/,
   },
   output: {
-    path: path.resolve(__dirname, 'test/chrome/dist'),
-    publicPath: '/test/chrome/dist/'
-  }
+    path: path.resolve(__dirname, "test/chrome/dist"),
+    publicPath: "/test/chrome/dist/",
+  },
 });

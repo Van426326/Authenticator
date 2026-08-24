@@ -8,4 +8,3 @@ webpack.prod.js
 webpack.dev.js
 webpack.watch.js
 src/test
-src/models/credentials.ts

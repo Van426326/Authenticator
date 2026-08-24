@@ -90,15 +90,19 @@ export async function decryptBackupData(
         continue;
       }
 
-      storageItem = {
-        ...unknownStorageItem,
-        ...JSON.parse(
-          CryptoJS.AES.decrypt(unknownStorageItem.data, decryptKey).toString(
-            CryptoJS.enc.Utf8
-          )
-        ),
-        encrypted: false,
-      };
+      try {
+        storageItem = {
+          ...unknownStorageItem,
+          ...JSON.parse(
+            CryptoJS.AES.decrypt(unknownStorageItem.data, decryptKey).toString(
+              CryptoJS.enc.Utf8
+            )
+          ),
+          encrypted: false,
+        };
+      } catch {
+        continue;
+      }
     } else {
       storageItem = unknownStorageItem;
     }

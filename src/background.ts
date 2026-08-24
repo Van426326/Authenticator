@@ -1,7 +1,5 @@
-import { getCredentials } from "./models/credentials";
 import { Encryption } from "./models/encryption";
 import { EntryStorage, ManagedStorage } from "./models/storage";
-import { Dropbox, Drive, OneDrive } from "./models/backup";
 import {
   getSiteName,
   getMatchedEntries,
@@ -12,55 +10,183 @@ import { CodeState } from "./models/otp";
 import { POPUP_HEIGHT, resolvePopupWidth } from "./models/display";
 
 import { getOTPAuthPerLineFromOPTAuthMigration } from "./models/migration";
-import { isChrome, isFirefox } from "./browser";
+import { isFirefox } from "./browser";
 import { UserSettings } from "./models/settings";
+import { createBackgroundSyncRuntime } from "./sync/SyncRuntime";
+import {
+  assertGitHubMessageTrusted,
+  parseGitHubConnectRequest,
+} from "./sync/GitHubMessage";
+import { decodeRepositoryKekMessage } from "./sync/SyncMessage";
+
+const gitHubSyncRuntime = createBackgroundSyncRuntime();
+
+function assertInternalGitHubMessage(
+  message: { action?: unknown },
+  sender: chrome.runtime.MessageSender
+) {
+  assertGitHubMessageTrusted(message, sender, chrome.runtime);
+}
 
 let contentTab: chrome.tabs.Tab | undefined;
 
-chrome.runtime.onMessage.addListener(async (message, sender) => {
+async function handleRuntimeMessage(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  message: any,
+  sender: chrome.runtime.MessageSender
+) {
   await UserSettings.updateItems();
 
+  if (message.action === "githubAccountMutation") {
+    const runtime = await gitHubSyncRuntime;
+    return { handled: await runtime.mutate(message.command) };
+  }
+  if (message.action === "githubInspect") {
+    const runtime = await gitHubSyncRuntime;
+    return runtime.inspect(parseGitHubConnectRequest(message.request));
+  }
+  if (message.action === "githubInspectStored") {
+    const runtime = await gitHubSyncRuntime;
+    return runtime.inspectStored();
+  }
+  if (message.action === "githubUnlock") {
+    const runtime = await gitHubSyncRuntime;
+    return runtime.unlock(
+      decodeRepositoryKekMessage(message.kek),
+      message.rememberPassword === true
+    );
+  }
+  if (message.action === "githubConnect") {
+    const runtime = await gitHubSyncRuntime;
+    return runtime.connect(parseGitHubConnectRequest(message.request));
+  }
+  if (message.action === "githubRepairLegacyPaths") {
+    const runtime = await gitHubSyncRuntime;
+    return runtime.repairLegacyOperationPaths();
+  }
+  if (message.action === "githubDisconnect") {
+    const runtime = await gitHubSyncRuntime;
+    await runtime.disconnect();
+    return { status: "unconfigured", configured: false, unlocked: false };
+  }
+  if (message.action === "githubForgetRepository") {
+    const runtime = await gitHubSyncRuntime;
+    await runtime.forgetRepository();
+    return { status: "unconfigured", configured: false, unlocked: false };
+  }
+  if (message.action === "githubGetStatus") {
+    const runtime = await gitHubSyncRuntime;
+    return runtime.getStatus();
+  }
+  if (message.action === "githubGetConflicts") {
+    const runtime = await gitHubSyncRuntime;
+    return runtime.listConflicts();
+  }
+  if (message.action === "githubResolveConflict") {
+    const runtime = await gitHubSyncRuntime;
+    return { resolved: await runtime.resolveConflict(message.command) };
+  }
+  if (message.action === "githubSyncPopup") {
+    const runtime = await gitHubSyncRuntime;
+    await runtime.triggers.immediate("popup");
+    return;
+  }
+  if (message.action === "githubSyncManual") {
+    const runtime = await gitHubSyncRuntime;
+    await runtime.triggers.immediate("manual");
+    return;
+  }
   if (message.action === "getCapture") {
     if (!sender.tab) {
       return;
     }
     const url = await getCapture(sender.tab);
     if (contentTab && contentTab.id) {
+      message.info = message.info || {};
       message.info.url = url;
       chrome.tabs.sendMessage(contentTab.id, {
         action: "sendCaptureUrl",
         info: message.info,
       });
     }
-  } else if (message.action === "getTotp") {
+    return;
+  }
+  if (message.action === "getTotp") {
     getTotp(message.info);
-  } else if (message.action === "cachePassphrase") {
-    chrome.storage.session.set({
+    return;
+  }
+  if (message.action === "cachePassphrase") {
+    await chrome.storage.session.set({
       cachedPassphrase: message.value,
       cachedKeyId: message.keyId,
     });
+    await chrome.alarms.clear("autolock");
+    await setAutolock();
+    const runtime = await gitHubSyncRuntime;
+    await runtime.triggers.immediate("popup");
+    return;
+  }
+  if (message.action === "lock") {
+    // The sync PAT, repository data key, and pending uploads are independent
+    // of the local account lock; clearing them here would block encrypted
+    // pending upload/recovery while locked.
+    await chrome.storage.session.set({
+      cachedPassphrase: null,
+      cachedKeyId: null,
+    });
+    return;
+  }
+  if (message.action === "resetAutolock") {
     chrome.alarms.clear("autolock");
     setAutolock();
-  } else if (["dropbox", "drive", "onedrive"].indexOf(message.action) > -1) {
-    getBackupToken(message.action);
-  } else if (message.action === "lock") {
-    chrome.storage.session.set({ cachedPassphrase: null, cachedKeyId: null });
-  } else if (message.action === "resetAutolock") {
-    chrome.alarms.clear("autolock");
-    setAutolock();
-  } else if (message.action === "updateContentTab") {
+    return;
+  }
+  if (message.action === "updateContentTab") {
     contentTab = message.data;
-  } else if (message.action === "updateContextMenu") {
+    return;
+  }
+  if (message.action === "updateContextMenu") {
     updateContextMenu();
   }
+  return;
+}
 
-  // https://stackoverflow.com/a/56483156
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  try {
+    assertInternalGitHubMessage(message, sender);
+  } catch {
+    return;
+  }
+  void handleRuntimeMessage(message, sender).then(
+    (result) => sendResponse(result),
+    () => sendResponse(undefined)
+  );
   return true;
 });
 
-chrome.alarms.onAlarm.addListener(() => {
-  chrome.storage.session.set({ cachedPassphrase: null, cachedKeyId: null });
-  if (contentTab && contentTab.id) {
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === "github-sync") {
+    void chrome.storage.local
+      .get("githubBackgroundSyncEnabled")
+      .then((values) => {
+        if (values.githubBackgroundSyncEnabled !== true) {
+          return undefined;
+        }
+        return gitHubSyncRuntime.then((runtime) =>
+          runtime.triggers.immediate("alarm")
+        );
+      })
+      .catch(() => undefined);
+    return true;
+  }
+  if (alarm.name !== "autolock") {
+    return;
+  }
+  chrome.storage.session.set({
+    cachedPassphrase: null,
+    cachedKeyId: null,
+  });
+  if (contentTab?.id) {
     chrome.tabs.sendMessage(contentTab.id, { action: "stopCapture" });
   }
   chrome.runtime.sendMessage({ action: "stopImport" });
@@ -241,198 +367,6 @@ async function getTotp(text: string, silent = false) {
   }
 }
 
-function getBackupToken(service: string) {
-  if (isChrome && service === "drive") {
-    chrome.identity.getAuthToken(
-      {
-        interactive: true,
-        scopes: ["https://www.googleapis.com/auth/drive.file"],
-      },
-      (value) => {
-        if (!value) {
-          return false;
-        }
-        UserSettings.items.driveToken = value;
-        UserSettings.commitItems();
-        chrome.runtime.sendMessage({ action: "drivetoken", value });
-        return true;
-      }
-    );
-  } else {
-    let authUrl = "";
-    let redirUrl = "";
-    if (service === "dropbox") {
-      redirUrl = encodeURIComponent(chrome.identity.getRedirectURL());
-      authUrl =
-        "https://www.dropbox.com/oauth2/authorize?response_type=token&client_id=" +
-        getCredentials().dropbox.client_id +
-        "&redirect_uri=" +
-        redirUrl;
-    } else if (service === "drive") {
-      if (navigator.userAgent.indexOf("Edg") !== -1) {
-        redirUrl = encodeURIComponent("https://authenticator.cc/oauth-edge");
-      } else if (isFirefox) {
-        redirUrl = encodeURIComponent(chrome.identity.getRedirectURL());
-      } else {
-        redirUrl = encodeURIComponent("https://authenticator.cc/oauth");
-      }
-
-      authUrl =
-        "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&access_type=offline&client_id=" +
-        getCredentials().drive.client_id +
-        "&scope=https%3A//www.googleapis.com/auth/drive.file&prompt=consent&redirect_uri=" +
-        redirUrl;
-    } else if (service === "onedrive") {
-      redirUrl = encodeURIComponent(chrome.identity.getRedirectURL());
-      authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${
-        getCredentials().onedrive.client_id
-      }&response_type=code&redirect_uri=${redirUrl}&scope=https%3A%2F%2Fgraph.microsoft.com%2FFiles.ReadWrite${
-        UserSettings.items.oneDriveBusiness !== true ? ".AppFolder" : ""
-      }%20https%3A%2F%2Fgraph.microsoft.com%2FUser.Read%20offline_access&response_mode=query&prompt=consent`;
-    }
-    chrome.identity.launchWebAuthFlow(
-      { url: authUrl, interactive: true },
-      async (url) => {
-        if (!url) {
-          return;
-        }
-        let hashMatches = url.split("#");
-        if (service === "drive") {
-          hashMatches = url.slice(0, -1).split("?");
-        } else if (service === "onedrive") {
-          hashMatches = url.split("?");
-        }
-
-        if (hashMatches.length < 2) {
-          return;
-        }
-
-        const hash = hashMatches[1];
-
-        const resData = hash.split("&");
-        for (let i = 0; i < resData.length; i++) {
-          const kv = resData[i];
-          if (/^(.*?)=(.*?)$/.test(kv)) {
-            const kvMatches = kv.match(/^(.*?)=(.*?)$/);
-            if (!kvMatches) {
-              continue;
-            }
-            const key = kvMatches[1];
-            const value = kvMatches[2];
-            if (key === "access_token") {
-              if (service === "dropbox") {
-                UserSettings.items.dropboxToken = value;
-                UserSettings.commitItems();
-                uploadBackup("dropbox");
-                return;
-              }
-            } else if (key === "code") {
-              if (service === "drive") {
-                let success = false;
-
-                const response = await fetch(
-                  "https://www.googleapis.com/oauth2/v4/token?client_id=" +
-                    getCredentials().drive.client_id +
-                    "&client_secret=" +
-                    getCredentials().drive.client_secret +
-                    "&code=" +
-                    value +
-                    "&redirect_uri=" +
-                    redirUrl +
-                    "&grant_type=authorization_code",
-                  {
-                    method: "POST",
-                    headers: {
-                      Accept: "application/json",
-                      "Content-Type": "application/x-www-form-urlencoded",
-                    },
-                  }
-                );
-
-                try {
-                  const res = await response.json();
-
-                  if (res.error) {
-                    console.error(res.error_description);
-                  } else {
-                    UserSettings.items.driveToken = res.access_token;
-                    UserSettings.items.driveRefreshToken = res.refresh_token;
-                    UserSettings.commitItems();
-                    success = true;
-                  }
-                } catch (error) {
-                  console.error(error);
-                  throw error;
-                }
-
-                uploadBackup("drive");
-                return success;
-              } else if (service === "onedrive") {
-                // Need to trade code we got from launchWebAuthFlow for a
-                // token & refresh token
-                let success = false;
-
-                const response = await fetch(
-                  "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-                  {
-                    method: "POST",
-                    headers: {
-                      Accept: "application/json",
-                      "Content-Type": "application/x-www-form-urlencoded",
-                    },
-                  }
-                );
-
-                try {
-                  const res = await response.json();
-                  if (res.error) {
-                    console.error(res.error_description);
-                  } else {
-                    UserSettings.items.oneDriveToken = res.access_token;
-                    UserSettings.items.oneDriveRefreshToken = res.refresh_token;
-                    UserSettings.commitItems();
-                    success = true;
-                  }
-                } catch (error) {
-                  console.error(error);
-                  throw error;
-                }
-
-                uploadBackup("onedrive");
-                return success;
-              }
-            }
-          }
-        }
-
-        return;
-      }
-    );
-  }
-}
-
-async function uploadBackup(service: string) {
-  const { cachedPassphrase, cachedKeyId } = await chrome.storage.session.get();
-  const encryption = new Encryption(cachedPassphrase, cachedKeyId);
-
-  switch (service) {
-    case "dropbox":
-      await new Dropbox().upload(encryption);
-      break;
-
-    case "drive":
-      await new Drive().upload(encryption);
-      break;
-
-    case "onedrive":
-      await new OneDrive().upload(encryption);
-      break;
-
-    default:
-      break;
-  }
-}
-
 chrome.commands.onCommand.addListener(async (command: string) => {
   const { cachedPassphrase, cachedKeyId } = await chrome.storage.session.get();
 
@@ -540,7 +474,7 @@ async function updateContextMenu() {
             title: chrome.i18n.getMessage("extName"),
             contexts: ["all"],
           });
-          chrome.contextMenus.onClicked.addListener((info, tab) => {
+          chrome.contextMenus.onClicked.addListener((_info, tab) => {
             let popupUrl = "view/popup.html?popup=true";
             if (tab && tab.url && tab.title) {
               popupUrl +=

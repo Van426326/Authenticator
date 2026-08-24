@@ -51,22 +51,21 @@ function getQrDebug(
       const url = captureCanvas.toDataURL();
       const infoDom = document.getElementById("info");
       if (infoDom) {
-        infoDom.innerHTML =
-          "<b>Scan Data:</b><br>" +
-          `<br>` +
-          `Window Inner Width: ${windowWidth}<br>` +
-          `Width: ${width}<br>` +
-          `Height: ${height}<br>` +
-          `Left: ${left}<br>` +
-          `Top: ${top}<br>` +
-          `Screen Width: ${window.screen.width}<br>` +
-          `Screen Height: ${window.screen.height}<br>` +
-          `Capture Width: ${qr.width}<br>` +
-          `Capture Height: ${qr.height}<br>` +
-          `Device Pixel Ratio: ${devicePixelRatio} / ${window.devicePixelRatio}<br>` +
-          `Tab ID: ${tab.id}<br>` +
-          "<br>" +
-          "<b>Captured Screenshot:</b>";
+        infoDom.textContent = [
+          "Scan Data:",
+          `Window Inner Width: ${windowWidth}`,
+          `Width: ${width}`,
+          `Height: ${height}`,
+          `Left: ${left}`,
+          `Top: ${top}`,
+          `Screen Width: ${window.screen.width}`,
+          `Screen Height: ${window.screen.height}`,
+          `Capture Width: ${qr.width}`,
+          `Capture Height: ${qr.height}`,
+          `Device Pixel Ratio: ${devicePixelRatio} / ${window.devicePixelRatio}`,
+          `Tab ID: ${tab.id}`,
+          "Captured Screenshot:",
+        ].join("\n");
       }
 
       const qrDom = document.getElementById("qr") as HTMLImageElement;

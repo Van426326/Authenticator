@@ -56,15 +56,11 @@
     </div>
     <a-button-link href="import.html">{{ i18n.import_backup }}</a-button-link>
     <br />
-    <!-- 3rd Party Backup Services -->
-    <div v-show="!backupDisabled && isBackupServiceSupported">
-      <div class="text">
-        {{ i18n.storage_sync_info }}
-      </div>
+    <!-- Multi-device synchronization -->
+    <div v-show="!syncDisabled && isBackupServiceSupported">
+      <div class="text">{{ i18n.github_sync_info }}</div>
       <p></p>
-      <a-button @click="showInfo('DrivePage')"> Google Drive </a-button>
-      <a-button @click="showInfo('OneDrivePage')"> OneDrive </a-button>
-      <a-button @click="showInfo('DropboxPage')"> Dropbox </a-button>
+      <a-button @click="showSync">{{ i18n.github_sync_title }}</a-button>
     </div>
   </div>
 </template>
@@ -95,64 +91,23 @@ export default Vue.extend({
     currentlyEncrypted: function () {
       return this.$store.getters["accounts/currentlyEncrypted"];
     },
-    backupDisabled: function () {
-      return this.$store.state.menu.backupDisabled;
+    syncDisabled: function () {
+      return this.$store.state.menu.syncDisabled;
     },
     isDataLinkSupported: function () {
       return !isSafari;
     },
     isBackupServiceSupported: function () {
-      return !isSafari;
+      return (
+        !isSafari &&
+        typeof chrome !== "undefined" &&
+        Boolean(chrome.runtime && chrome.runtime.id)
+      );
     },
   },
   methods: {
-    showInfo(tab: string) {
-      if (tab === "DropboxPage") {
-        chrome.permissions.request(
-          { origins: ["https://*.dropboxapi.com/*"] },
-          async (granted) => {
-            if (granted) {
-              this.$store.commit("style/showInfo");
-              this.$store.commit("currentView/changeView", tab);
-            }
-          }
-        );
-        return;
-      } else if (tab === "DrivePage") {
-        chrome.permissions.request(
-          {
-            origins: [
-              "https://www.googleapis.com/*",
-              "https://accounts.google.com/o/oauth2/revoke",
-            ],
-          },
-          async (granted) => {
-            if (granted) {
-              this.$store.commit("style/showInfo");
-              this.$store.commit("currentView/changeView", tab);
-            }
-            return;
-          }
-        );
-        return;
-      } else if (tab === "OneDrivePage") {
-        chrome.permissions.request(
-          {
-            origins: [
-              "https://graph.microsoft.com/me/*",
-              "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-            ],
-          },
-          async (granted) => {
-            if (granted) {
-              this.$store.commit("style/showInfo");
-              this.$store.commit("currentView/changeView", tab);
-            }
-            return;
-          }
-        );
-        return;
-      }
+    showSync() {
+      this.$store.commit("currentView/changeView", "SyncPage");
     },
     downloadBackUpOneLineOtpAuthFile() {
       const exportData = this.$store.state.accounts.exportData;

@@ -12,7 +12,7 @@
 - 窄、默认、宽三档扩展宽度
 - 通过账户卡片拖拽手柄直接调整顺序
 - 扫描二维码、手动输入密钥或导入备份
-- 可选密码加密、自动锁定、浏览器同步和云备份
+- 可选本地密码加密、自动锁定和 GitHub 私有仓库多设备同步
 - 针对 OTP 刷新、搜索和生产构建的性能优化
 
 ## 从源码安装
@@ -59,13 +59,24 @@ npm run firefox
 npm run edge
 ```
 
-生产构建需要自行配置 `src/models/credentials.ts` 中涉及第三方服务的凭据：
-
 ```bash
 npm run prod
 ```
 
-不要提交真实 API 密钥、OAuth 密钥、验证码密钥或未加密的账户备份。
+## GitHub 私有仓库同步安全说明
+
+- 同步仅支持 **GitHub 私有仓库**，不支持公共仓库、GitHub Enterprise Server 或其他 Git 服务。
+- 仓库必须为**已初始化的非空私有仓库**（例如创建时勾选 Initialize with README），扩展不会自动创建仓库。
+- 扩展仅使用固定分支 `authenticator-sync`，从不 force-push；正常同步只追加不可变操作文件。
+- 旧版本曾可能把操作写入错误的设备目录。只有用户在 `historyRewritten` 状态下明确确认“修复旧版操作路径”后，扩展才会创建一个非强制修复 commit：将完全相同的 Git blob 归档到 `AuthenticatorSyncLegacy/`，恢复到加密 envelope 认证过的设备路径，并从当前活动树移除错误路径；旧 commit 和原始字节仍永久保留。
+- 使用 **fine-grained PAT**：Resource owner 选择同步仓库，Repository permission 仅授予 `Contents: Read and write`。
+- PAT 默认仅在当前浏览器会话内保存（`chrome.storage.session`）；仅当用户显式勾选“记住 PAT”时才写入 `chrome.storage.local`，绝不进入浏览器 sync，也不会写入日志或 commit。
+- 可使用独立的同步密码通过 Argon2id 与 AES-256-GCM 加密远程操作；同步密码不会保存，遗忘后无法解密远程数据。
+- 仅已加密的操作内容会上传。仓库访问者仍可看到 Git 元数据（文件、设备目录、commit 时间与大小）和永久 commit 历史；删除操作是**永久且不可逆**的 tombstone。
+- 远程历史被改写（已确认操作缺失、移动路径或内容变化）时，扩展会 **fail-closed**：停止同步、不覆盖远程数据、不自动重置。旧版路径修复只在每个 blob 的 SHA、加密 envelope、仓库 ID、操作 ID 和认证设备 ID 全部验证通过时可用；真实缺失或内容变化仍拒绝修复。
+- 远程仓库数据被删除或所有设备副本同时损坏时无法恢复，请保留离线导出备份。
+
+不要提交真实密码、验证码密钥、真实 PAT 或未加密的账户备份。
 
 ## 项目关系与许可
 

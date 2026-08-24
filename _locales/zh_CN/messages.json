@@ -181,10 +181,6 @@
     "message": "注意！您的本地时钟时间差过大，请修正后再进行操作。",
     "description": "Local Time is Too Far Off"
   },
-  "remind_backup": {
-    "message": "您是否为账户数据创建了备份？不要等到为时已晚。",
-    "description": "Remind Backup"
-  },
   "capture_failed": {
     "message": "捕捉失败，请重载您正在浏览的页面后重试。",
     "description": "Capture Failed"
@@ -253,10 +249,6 @@
     "message": "显示全部条目",
     "description": "Show all entries."
   },
-  "dropbox_risk": {
-    "message": "警告：备份未加密，您需自担风险。",
-    "description": "Backup risk warning."
-  },
   "import_error_password": {
     "message": "您必须提供正确的密码才能导入备份。",
     "description": "Error password warning when import backups."
@@ -288,10 +280,6 @@
   "edit": {
     "message": "编辑",
     "description": "Edit"
-  },
-  "manual_dropbox": {
-    "message": "手动备份",
-    "description": "Manual backup"
   },
   "use_autofill": {
     "message": "启用自动填充",
@@ -329,10 +317,6 @@
     "message": "扁平",
     "description": "Flat theme"
   },
-  "storage_sync_info": {
-    "message": "自动备份您的数据至第三方服务。",
-    "description": "3rd party backup info"
-  },
   "browser_sync": {
     "message": "浏览器数据同步",
     "description": "Storage location"
@@ -341,26 +325,9 @@
     "message": "登录",
     "description": "Sign in to 3rd party storage services"
   },
-  "sign_in_business": {
-    "message": "登录 (企业版)",
-    "description": "Sign in to 3rd party storage services"
-  },
-  "onedrive_business_perms": {
-    "message": "为何企业版账户需要更高权限？"
-  },
   "log_out": {
     "message": "注销",
     "description": "Sign out of 3rd party storage services"
-  },
-  "token_revoked": {
-    "message": "连接到您的 $SERVICE$ 账号时出错，请重试。",
-    "description": "Error authenticating to backup service. $SERVICE$ will be replaced with a proper noun (E.g.: 'Google Drive' or 'Dropbox')",
-    "placeholders": {
-      "service": {
-        "content": "$1",
-        "example": "Google Drive"
-      }
-    }
   },
   "otp_unsupported_warn": {
     "message": "您添加了Steam或战网账号，所以备份文件将不会使用标准输出格式。",
@@ -476,9 +443,6 @@
   "permission_storage": {
     "message": "访问浏览器存储以存储帐户数据。"
   },
-  "permission_identity": {
-    "message": "用以登录第三方存储服务。"
-  },
   "permission_alarms": {
     "message": "允许自动锁定功能生效。"
   },
@@ -493,24 +457,6 @@
   },
   "permission_sync_clock": {
     "message": "允许从 Google 同步时间"
-  },
-  "permission_dropbox": {
-    "message": "允许备份到 Dropbox"
-  },
-  "permission_dropbox_cannot_revoke": {
-    "message": "您必须先停用 Dropbox 备份。"
-  },
-  "permission_drive": {
-    "message": "允许备份到 Google Drive。"
-  },
-  "permission_drive_cannot_revoke": {
-    "message": "您必须先停用 Google Drive 备份。"
-  },
-  "permission_onedrive": {
-    "message": "允许备份到 OneDrive。"
-  },
-  "permission_onedrive_cannot_revoke": {
-    "message": "您必须先停用 OneDrive 备份。"
   },
   "permission_unknown_permission": {
     "message": "未知权限。如果您看到此消息，请发送错误报告。"
@@ -535,5 +481,202 @@
   },
   "drag_to_reorder": {
     "message": "拖动调整顺序"
-  }
+  },
+  "permission_github_api": {
+    "message": "访问 GitHub API 和私有仓库"
+  },
+  "github_sync_title": {
+    "message": "GitHub 同步"
+  },
+  "github_status": {
+    "message": "状态"
+  },
+  "github_last_sync": {
+    "message": "上次同步"
+  },
+  "github_sync_info": {
+    "message": "通过 GitHub 私有仓库同步账户。"
+  },
+  "github_owner": {
+    "message": "仓库所有者"
+  },
+  "github_repository": {
+    "message": "仓库名称"
+  },
+  "github_repo_requirement": {
+    "message": "同步需要一个已初始化（非空）的 GitHub 私有仓库。"
+  },
+  "github_pat": {
+    "message": "细粒度个人访问令牌（PAT）"
+  },
+  "github_remember_pat": {
+    "message": "在此浏览器中记住 PAT（本地存储）"
+  },
+  "github_pat_storage": {
+    "message": "勾选“记住 PAT”后，令牌会保存在此浏览器的本地存储中，关闭插件页面后仍可继续同步。取消勾选则只在本次浏览器会话中保留。"
+  },
+  "github_pat_permissions": {
+    "message": "PAT 必须对目标仓库具有“Contents：读取和写入”权限。"
+  },
+  "github_branch": {
+    "message": "同步分支"
+  },
+  "github_sync_password": {
+    "message": "同步密码"
+  },
+  "github_sync_password_confirm": {
+    "message": "确认同步密码"
+  },
+  "github_remember_password": {
+    "message": "在此浏览器中记住同步密码（本地存储）"
+  },
+  "github_password_storage": {
+    "message": "勾选后会把同步密码和解锁密钥保存在此浏览器的本地存储中，下次无需重新输入即可同步。取消勾选则只在本次浏览器会话中保留。"
+  },
+  "github_encryption_mandatory": {
+    "message": "同步数据始终加密，不支持未加密模式。"
+  },
+  "github_password_warning": {
+    "message": "仅在勾选“记住同步密码”时把密码保存在本设备，不会上传到 GitHub。如果所有设备都忘记该密码，远端加密数据将无法恢复。"
+  },
+  "github_encryption_explanation": {
+    "message": "仅上传加密后的操作内容。具有仓库访问权限的人仍可看到 Git 元数据和永久提交历史。条目删除是永久操作；“忘记仓库历史”只删除本设备的本地同步历史，不会删除 GitHub 仓库。"
+  },
+  "github_background": {
+    "message": "定期在后台同步"
+  },
+  "github_interval": {
+    "message": "同步间隔（分钟，最少 5 分钟）"
+  },
+  "github_connect": {
+    "message": "连接"
+  },
+  "github_unlock": {
+    "message": "解锁"
+  },
+  "github_working": {
+    "message": "处理中…"
+  },
+  "github_sync_now": {
+    "message": "立即同步"
+  },
+  "github_disconnect": {
+    "message": "断开此设备"
+  },
+  "github_forget": {
+    "message": "忘记仓库历史"
+  },
+  "github_forget_confirm": {
+    "message": "此操作会永久删除本地同步历史。是否继续？"
+  },
+  "github_forget_confirm_again": {
+    "message": "最终确认：是否忘记此仓库并删除全部本地同步历史？"
+  },
+  "github_open_repository": {
+    "message": "打开 GitHub 仓库"
+  },
+  "github_conflicts": {
+    "message": "需要人工处理的冲突"
+  },
+  "github_keep": {
+    "message": "保留"
+  },
+  "github_details_head": {
+    "message": "分支头"
+  },
+  "github_details_pending": {
+    "message": "待同步操作"
+  },
+  "github_details_rate_remaining": {
+    "message": "API 剩余请求次数"
+  },
+  "github_details_rate_reset": {
+    "message": "限额重置时间"
+  },
+  "github_status_token_required": {
+    "message": "需要 GitHub PAT 才能继续。请输入具有“Contents：读取和写入”权限的令牌。"
+  },
+  "github_status_needs_sync_password": {
+    "message": "请输入此仓库的同步密码以解锁加密数据。"
+  },
+  "github_status_rate_limited": {
+    "message": "已达到 GitHub API 请求限额，请在显示的重置时间之后重试。"
+  },
+  "github_status_branch_protected": {
+    "message": "同步分支受到保护，GitHub 拒绝了更新。请检查分支保护规则。"
+  },
+  "github_status_history_rewritten": {
+    "message": "检测到远端历史或操作路径不一致。同步已停止以防覆盖数据。若这是旧版本产生的路径问题，请使用下方的“修复旧版操作路径”。"
+  },
+  "github_status_repository_changed": {
+    "message": "远端仓库身份已改变。本设备的同步连接已过期，请断开后重新连接并核验仓库。"
+  },
+  "github_status_remote_missing": {
+    "message": "同步仓库或分支不存在。请确认仓库存在，并且同步分支仍包含加密配置。"
+  },
+  "github_status_permission_required": {
+    "message": "需要 GitHub API 访问权限。请授权 https://api.github.com/* 后继续。"
+  },
+  "github_status_auth_failed": {
+    "message": "GitHub 拒绝了 PAT。请检查令牌及其“Contents：读取和写入”权限。"
+  },
+  "github_status_offline": {
+    "message": "当前无法连接 GitHub，稍后会自动重试。"
+  },
+  "github_status_unsupported_server": {
+    "message": "当前 GitHub 仓库不受支持，例如仓库不是私有仓库。请使用 GitHub.com 私有仓库。"
+  },
+  "github_status_remote_corrupt": {
+    "message": "无法校验仓库里的同步数据。请改用一个已初始化的空私有仓库，或删除 authenticator-sync 分支上的 AuthenticatorSync 目录后重试。"
+  },
+  "github_status_generic_error": {
+    "message": "GitHub 同步失败。请检查仓库、PAT 和网络连接后重试。"
+  },
+  "github_error_invalid_identity": {
+    "message": "请检查 GitHub 仓库所有者和仓库名称。"
+  },
+  "github_error_missing_token": {
+    "message": "请输入细粒度 GitHub PAT。"
+  },
+  "github_error_password_mismatch": {
+    "message": "同步密码与确认密码不一致。"
+  },
+  "github_error_create_password": {
+    "message": "请输入独立的新同步密码以初始化此仓库。"
+  },
+  "github_error_config_race": {
+    "message": "另一台设备已使用不同的同步密码初始化此仓库。请输入当前同步密码后重试。"
+  },
+  "github_repair_legacy_paths": {
+    "message": "修复旧版操作路径"
+  },
+  "github_repair_legacy_paths_confirm": {
+    "message": "此操作会创建一个非强制修复提交：归档旧路径，并将每个加密操作恢复到其认证过的设备路径。是否继续？"
+  },
+  "github_conflict_deletion": { "message": "删除操作，来自设备" },
+  "github_conflict_revision": { "message": "修订操作，来自设备" },
+  "github_state_unconfigured": { "message": "未配置" },
+  "github_state_testing": { "message": "正在测试连接" },
+  "github_state_initializing": { "message": "正在初始化" },
+  "github_state_pending": { "message": "等待同步" },
+  "github_state_syncing": { "message": "正在同步" },
+  "github_state_synced": { "message": "同步完成" },
+  "github_state_conflict": { "message": "存在冲突" },
+  "github_state_needsLocalUnlock": { "message": "需要解锁本地账户" },
+  "github_state_needsSyncPassword": { "message": "需要同步密码" },
+  "github_state_permissionRequired": { "message": "需要 GitHub API 权限" },
+  "github_state_tokenRequired": { "message": "需要 GitHub PAT" },
+  "github_state_authFailed": { "message": "身份验证失败" },
+  "github_state_rateLimited": { "message": "API 请求受限" },
+  "github_state_branchProtected": { "message": "分支受到保护" },
+  "github_state_repositoryChanged": { "message": "仓库身份已改变" },
+  "github_state_historyRewritten": { "message": "历史完整性验证失败" },
+  "github_state_offline": { "message": "网络不可用" },
+  "github_state_unsupportedServer": { "message": "仓库不受支持" },
+  "github_state_remoteMissing": { "message": "远端数据不存在" },
+  "github_state_remoteIncomplete": { "message": "远端历史不完整" },
+  "github_state_remoteCorrupt": { "message": "远端数据损坏" },
+  "github_state_error": { "message": "同步错误" },
+  "github_state_repaired": { "message": "修复完成" },
+  "github_state_noRepairNeeded": { "message": "无需修复" }
 }

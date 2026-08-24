@@ -120,7 +120,6 @@ import Vue from "vue";
 import { mapState } from "vuex";
 import * as QRGen from "qrcode-generator";
 import { OTPEntry, OTPType, CodeState, OTPAlgorithm } from "../../models/otp";
-import { EntryStorage } from "../../models/storage";
 import { getCurrentTab, okToInjectContentScript } from "../../utils";
 
 import IconMinusCircle from "../../../svg/minus-circle.svg";
@@ -205,7 +204,13 @@ export default Vue.extend({
     },
     async pin(entry: OTPEntry) {
       this.$store.commit("accounts/pinEntry", entry);
-      await EntryStorage.set(this.$store.state.accounts.entries);
+      await entry.update();
+      await this.$store.dispatch(
+        "accounts/reorderCodes",
+        this.$store.state.accounts.entries.map(
+          (candidate: OTPEntry) => candidate.hash
+        )
+      );
       const codesEl = document.getElementById("codes") as HTMLDivElement;
       codesEl.scrollTop = 0;
     },

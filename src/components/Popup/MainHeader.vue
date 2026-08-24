@@ -1,4 +1,5 @@
 <template>
+  <!-- // pi-lens-ignore: unknown, unknown:2 -->
   <header class="header">
     <div class="header-actions header-actions--start">
       <button
@@ -21,16 +22,20 @@
       >
         <IconLock />
       </button>
-      <div
-        class="icon sync-status"
-        role="status"
-        v-bind:aria-label="i18n.storage_sync_info"
-        v-show="
-          (dropboxToken || driveToken || oneDriveToken) && !style.isEditing
+      <button
+        class="icon icon-button sync-status"
+        data-test="sync-status"
+        type="button"
+        v-bind:title="i18n.github_sync_title + ': ' + syncStatusLabel(status)"
+        v-bind:aria-label="
+          i18n.github_sync_title + ': ' + syncStatusLabel(status)
         "
+        v-show="configured && !style.isEditing"
+        v-on:click="showInfo('SyncPage')"
       >
         <IconSync />
-      </div>
+        <span v-if="status === 'conflict'" aria-hidden="true">!</span>
+      </button>
     </div>
 
     <div class="header-brand" v-on:dblclick="popOut()">
@@ -86,11 +91,12 @@ import IconPencil from "../../../svg/pencil.svg";
 import IconCheck from "../../../svg/check.svg";
 import IconPlus from "../../../svg/plus.svg";
 import { isFirefox } from "../../browser";
+import { statusLabelKey } from "../../sync/githubSyncUi";
 
 const computedPrototype = [
   mapState("style", ["style"]),
   mapState("accounts", ["defaultEncryption"]),
-  mapState("backup", ["driveToken", "dropboxToken", "oneDriveToken"]),
+  mapState("sync", ["status", "configured"]),
 ];
 
 let computed = {};
@@ -102,6 +108,9 @@ for (const module of computedPrototype) {
 export default Vue.extend({
   computed,
   methods: {
+    syncStatusLabel(status: string) {
+      return this.i18n[statusLabelKey(status)] || this.i18n.github_state_error;
+    },
     isPopup() {
       const params = new URLSearchParams(document.location.search.substring(1));
       return params.get("popup");

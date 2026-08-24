@@ -143,7 +143,7 @@ const cases: TestCase[] = [
         hash: "b905232a977347a0a113a7d1c924fb8d",
         index: 0,
         issuer: "",
-        secret: "DKCE3SQPHJRJQGBGI322QA7Z5E======",
+        secret: "DKCE3SQPHJRJQGBGI322QA7Z5E======", // synthetic fixture; gitleaks:allow
         type: "totp"
       }
     }
@@ -173,7 +173,7 @@ const cases: TestCase[] = [
         hash: "7c117a118e015b6232ff359958b9e270",
         index: 0,
         issuer: "",
-        secret: "2c52e8fcfac34091da63ef7b118f1cc50b925a42",
+        secret: "2c52e8fcfac34091da63ef7b118f1cc50b925a42", // synthetic fixture; gitleaks:allow
         type: "hhex"
       }
     }
@@ -188,7 +188,7 @@ const cases: TestCase[] = [
         hash: "0e00b601f60a4d7154d54ba94c429afb",
         index: 0,
         issuer: "",
-        secret: "QLGNXJ2KLSOACXOEKJ47X6VA6ZPGT5HE2GBO5NPXTLD7FJAKD4JQ",
+        secret: "QLGNXJ2KLSOACXOEKJ47X6VA6ZPGT5HE2GBO5NPXTLD7FJAKD4JQ", // synthetic fixture; gitleaks:allow
         type: "totp"
       }
     }

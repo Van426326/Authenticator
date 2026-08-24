@@ -1,0 +1,18 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Generated extension bundles are scanned through their source files instead."
+paths = [
+  '''^dist/''',
+  '''^test/chrome/dist/''',
+  '''^test/firefox/dist/''',
+  '''^release/(chrome|edge|firefox)/dist/''',
+]
+
+[[allowlists]]
+description = "Published and synthetic OTP interoperability fixtures, not credentials."
+paths = [
+  '''^src/test/gost\.test\.ts$''',
+  '''^src/test/test\.ts\.disabled$''',
+]

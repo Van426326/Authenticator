@@ -1,6 +1,6 @@
 {
   "name": "modern-authenticator-extension",
-  "version": "0.1.0",
+  "version": "8.1.0",
   "description": "A modern, privacy-focused browser authenticator with refined UX and efficient OTP refresh.",
   "scripts": {
     "compile": "node scripts/build.js firefox",
@@ -39,6 +39,7 @@
     "chai": "^4.2.0",
     "crypto-js": "^4.1.1",
     "eslint": "^8.56.0",
+    "fake-indexeddb": "^6.2.5",
     "fork-ts-checker-webpack-plugin": "^6.5.3",
     "lodash": "^4.17.21",
     "mocha": "^10.2.0",

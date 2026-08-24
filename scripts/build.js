@@ -4,8 +4,10 @@ const { spawnSync } = require("child_process");
 const {
   copyFileSync,
   cpSync,
+  existsSync,
+  lstatSync,
   mkdirSync,
-  readFileSync,
+  readdirSync,
   renameSync,
   rmSync,
 } = require("fs");
@@ -25,7 +27,7 @@ process.chdir(rootDir);
 
 if (!supportedPlatforms.has(platform)) {
   console.error(
-    "Invalid platform type. Supported platforms are 'chrome', 'firefox', 'edge', 'test', and 'prod'"
+    "Invalid platform type. Supported platforms are 'chrome', 'firefox', 'edge', 'test', and 'prod'",
   );
   process.exit(1);
 }
@@ -49,18 +51,49 @@ function runNode(relativeScript, args, options = {}) {
   return result.status === 0;
 }
 
-function getGitRemote() {
-  const result = spawnSync("git", ["config", "--get", "remote.origin.url"], {
-    cwd: rootDir,
-    encoding: "utf8",
-  });
-
-  return result.status === 0 ? result.stdout.trim() : "";
-}
-
 function copyInto(source, destinationDirectory) {
   const destination = path.join(destinationDirectory, path.basename(source));
   cpSync(source, destination, { recursive: true });
+}
+
+/**
+ * Mirrors a completed build into a stable directory without deleting that
+ * directory. Chrome associates unpacked-extension storage with the loaded
+ * extension; removing its root during a rebuild can make Chrome treat it as
+ * an uninstall and clear chrome.storage.local.
+ */
+function mirrorDirectory(source, destination) {
+  mkdirSync(destination, { recursive: true });
+  const sourceNames = new Set(readdirSync(source));
+
+  for (const name of readdirSync(destination)) {
+    if (!sourceNames.has(name)) {
+      rmSync(path.join(destination, name), { force: true, recursive: true });
+    }
+  }
+
+  for (const name of sourceNames) {
+    const sourcePath = path.join(source, name);
+    const destinationPath = path.join(destination, name);
+    const sourceStat = lstatSync(sourcePath);
+    if (sourceStat.isDirectory()) {
+      if (
+        existsSync(destinationPath) &&
+        !lstatSync(destinationPath).isDirectory()
+      ) {
+        rmSync(destinationPath, { force: true, recursive: true });
+      }
+      mirrorDirectory(sourcePath, destinationPath);
+    } else {
+      if (
+        existsSync(destinationPath) &&
+        lstatSync(destinationPath).isDirectory()
+      ) {
+        rmSync(destinationPath, { force: true, recursive: true });
+      }
+      copyFileSync(sourcePath, destinationPath);
+    }
+  }
 }
 
 function postCompile(target) {
@@ -77,40 +110,25 @@ function postCompile(target) {
       : `manifest-${target}.json`;
   copyFileSync(
     path.join(rootDir, "manifests", manifestName),
-    path.join(targetDirectory, "manifest.json")
+    path.join(targetDirectory, "manifest.json"),
   );
 
   if (target === "chrome" || target === "edge") {
     copyFileSync(
       path.join(rootDir, "manifests", "schema-chrome.json"),
-      path.join(targetDirectory, "schema.json")
+      path.join(targetDirectory, "schema.json"),
     );
   }
 
   copyFileSync(
     path.join(rootDir, "manifests", "manifest-pwa.json"),
-    path.join(targetDirectory, "manifest-pwa.json")
+    path.join(targetDirectory, "manifest-pwa.json"),
   );
 }
 
 try {
-  const remote = getGitRemote();
-  const credentials = readFileSync(
-    path.join(rootDir, "src", "models", "credentials.ts"),
-    "utf8"
-  ).replace(/[\r\n]/g, "");
-  const credentialPattern = /^.*".+".*".+".*".+".*".+".*".+".*$/;
-
   console.log("Removing old build files...");
-  for (const item of [
-    "build",
-    "dist",
-    "firefox",
-    "chrome",
-    "edge",
-    "release",
-    "test",
-  ]) {
+  for (const item of ["build", "dist", "firefox", "chrome", "edge", "test"]) {
     rmSync(path.join(rootDir, item), { force: true, recursive: true });
   }
 
@@ -118,7 +136,7 @@ try {
   const styleIsValid = runNode(
     "node_modules/prettier/bin-prettier.js",
     ["--check", "src", "sass/*.scss"],
-    { allowFailure: true }
+    { allowFailure: true },
   );
   if (!styleIsValid) {
     runNode("node_modules/prettier/bin-prettier.js", [
@@ -129,28 +147,6 @@ try {
   }
 
   runNode("node_modules/eslint/bin/eslint.js", [".", "--ext", ".js,.ts"]);
-
-  if (!credentialPattern.test(credentials)) {
-    const label = platform === "prod" ? "Error" : "Warning";
-    console.warn(
-      `\x1b[7m\x1b[33m${label}: Missing info in credentials.ts\x1b[0m`
-    );
-    if (platform === "prod") {
-      process.exit(1);
-    }
-  }
-
-  const isUpstream =
-    remote.includes(
-      "https://github.com/Authenticator-Extension/Authenticator.git"
-    ) ||
-    remote.includes("git@github.com:Authenticator-Extension/Authenticator.git");
-  if (!isUpstream && !process.env.CI) {
-    console.log("\n\x1b[7m\x1b[33mNotice\x1b[0m\n");
-    console.log(
-      "This fork requires its own third-party API credentials before redistribution. Configure ./src/models/credentials.ts and the relevant manifest values.\n"
-    );
-  }
 
   console.log("Compiling...");
   if (platform === "prod") {
@@ -180,11 +176,11 @@ try {
   runNode("node_modules/sass/sass.js", ["sass:css"]);
   copyFileSync(
     path.join(rootDir, "sass", "DroidSansMono.woff2"),
-    path.join(rootDir, "css", "DroidSansMono.woff2")
+    path.join(rootDir, "css", "DroidSansMono.woff2"),
   );
   copyFileSync(
     path.join(rootDir, "sass", "mocha.css"),
-    path.join(rootDir, "css", "mocha.css")
+    path.join(rootDir, "css", "mocha.css"),
   );
 
   if (platform === "prod") {
@@ -202,12 +198,12 @@ try {
     postCompile("chrome");
     postCompile("firefox");
     postCompile("edge");
-    mkdirSync(path.join(rootDir, "release"));
+    const releaseDirectory = path.join(rootDir, "release");
+    mkdirSync(releaseDirectory, { recursive: true });
     for (const target of ["chrome", "firefox", "edge"]) {
-      renameSync(
-        path.join(rootDir, target),
-        path.join(rootDir, "release", target)
-      );
+      const completedBuild = path.join(rootDir, target);
+      mirrorDirectory(completedBuild, path.join(releaseDirectory, target));
+      rmSync(completedBuild, { force: true, recursive: true });
     }
   } else if (platform === "test") {
     postCompile("chrome");
@@ -216,7 +212,7 @@ try {
     for (const target of ["chrome", "firefox"]) {
       renameSync(
         path.join(rootDir, target),
-        path.join(rootDir, "test", target)
+        path.join(rootDir, "test", target),
       );
     }
   } else {

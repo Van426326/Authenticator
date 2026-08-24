@@ -16,7 +16,7 @@
     "noImplicitReturns": true,
     "pretty": true,
     "sourceMap": true,
-    "allowSyntheticDefaultImports": true,
+    "allowSyntheticDefaultImports": true
   },
   "include": [
     "src/*.ts",

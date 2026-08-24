@@ -2,12 +2,49 @@ import { Encryption } from "./encryption";
 import { OTPEntry, OTPType, OTPAlgorithm, CodeState } from "./otp";
 import { StorageLocation, UserSettings } from "./settings";
 import { DataType } from "./otp";
+import { accountWriteMutex, AsyncMutexPermit } from "../sync/AsyncMutex";
+import { persistAccountMutation } from "../sync/AccountSyncClient";
+
+const RESERVED_BROWSER_STORAGE_KEYS = new Set([
+  "UserSettings",
+  "LocalStorage",
+  "key",
+  "githubSyncConnection",
+  "githubSyncStatus",
+  "githubDeviceId",
+  "githubRepositoryDataKey",
+  "githubSyncToken",
+  "githubSyncPassword",
+  "githubSyncDetails",
+  "githubBackgroundSyncEnabled",
+  "githubBackgroundSyncMinutes",
+]);
+
+function isReservedBrowserStorageKey(key: string) {
+  return RESERVED_BROWSER_STORAGE_KEYS.has(key);
+}
+
 export class BrowserStorage {
   private static async getStorageLocation(): Promise<StorageLocation> {
     await UserSettings.updateItems();
     const managedLocation = await ManagedStorage.get<StorageLocation>(
       "storageArea"
     );
+    const localSyncState = await chrome.storage.local.get(
+      "githubSyncConnection"
+    );
+    if (localSyncState.githubSyncConnection) {
+      if (managedLocation === StorageLocation.Sync) {
+        throw new Error(
+          "Managed storage policy conflicts with GitHub synchronization"
+        );
+      }
+      if (UserSettings.items.storageLocation !== StorageLocation.Local) {
+        UserSettings.items.storageLocation = StorageLocation.Local;
+        await UserSettings.commitItems();
+      }
+      return StorageLocation.Local;
+    }
     if (
       managedLocation === StorageLocation.Sync ||
       managedLocation === StorageLocation.Local
@@ -67,12 +104,12 @@ export class BrowserStorage {
   static async get() {
     const storageLocation = await this.getStorageLocation();
     const removeOtherData = function (items: Record<string, unknown>): void {
-      delete items.key;
-      delete items.LocalStorage;
-
-      for (const itemId in items) {
+      for (const itemId of Object.keys(items)) {
+        if (isReservedBrowserStorageKey(itemId)) {
+          delete items[itemId];
+          continue;
+        }
         const item = items[itemId];
-
         if (
           item !== null &&
           typeof item === "object" &&
@@ -287,7 +324,7 @@ export class EntryStorage {
 
     for (const hash of Object.keys(data)) {
       if (
-        hash === "UserSettings" ||
+        isReservedBrowserStorageKey(hash) ||
         (data[hash] as { dataType: string }).dataType === "Key" ||
         !this.isValidEntry(data, hash)
       ) {
@@ -376,7 +413,7 @@ export class EntryStorage {
     const _data = await BrowserStorage.get();
     for (const hash of Object.keys(_data)) {
       if (
-        hash === "UserSettings" ||
+        isReservedBrowserStorageKey(hash) ||
         (_data[hash] as { dataType: string }).dataType === "Key" ||
         !this.isValidEntry(_data, hash)
       ) {
@@ -452,9 +489,34 @@ export class EntryStorage {
 
   static async import(
     encryption: Encryption,
+    data: { [hash: string]: RawOTPStorage },
+    permit?: AsyncMutexPermit
+  ) {
+    void permit;
+    const imported = this.parseImportEntries(encryption, data);
+    for (const entry of imported) {
+      await entry.create();
+    }
+    if (imported.length === 0) {
+      return;
+    }
+    const entries = await this.get();
+    await persistAccountMutation(
+      {
+        entityType: "order",
+        entityId: "global-order",
+        kind: "upsert",
+        logicalPayload: { ids: entries.map((entry) => entry.hash) },
+      },
+      () => this.set(entries)
+    );
+  }
+
+  private static parseImportEntries(
+    encryption: Encryption,
     data: { [hash: string]: RawOTPStorage }
   ) {
-    let _data = await BrowserStorage.get();
+    const entries: OTPEntry[] = [];
     for (const hash of Object.keys(data)) {
       // never trust data import from user
       // data must be decrypted before calling this method
@@ -550,20 +612,32 @@ export class EntryStorage {
         delete data[hash];
       }
 
-      const entry = new OTPEntry(entryData, encryption);
-      _data[entryData.hash] = this.getOTPStorageFromEntry(entry);
+      entries.push(new OTPEntry(entryData, encryption));
     }
-    _data = this.ensureUniqueIndex(_data);
-    await BrowserStorage.set(_data);
+    return entries;
   }
 
-  static async add(entry: OTPEntry) {
+  static add(entry: OTPEntry, permit?: AsyncMutexPermit) {
+    return accountWriteMutex.runExclusive(
+      () => this.addUnlocked(entry),
+      permit
+    );
+  }
+
+  private static async addUnlocked(entry: OTPEntry) {
     await BrowserStorage.set({
       [entry.hash]: this.getOTPStorageFromEntry(entry),
     });
   }
 
-  static async update(entry: OTPEntry) {
+  static update(entry: OTPEntry, permit?: AsyncMutexPermit) {
+    return accountWriteMutex.runExclusive(
+      () => this.updateUnlocked(entry),
+      permit
+    );
+  }
+
+  private static async updateUnlocked(entry: OTPEntry) {
     let _data = await BrowserStorage.get();
     if (!Object.prototype.hasOwnProperty.call(_data, entry.hash)) {
       throw new Error("Entry to change does not exist.");
@@ -574,7 +648,40 @@ export class EntryStorage {
     await BrowserStorage.set(_data);
   }
 
-  static async set(entries: OTPEntry[]) {
+  static set(entries: OTPEntry[], permit?: AsyncMutexPermit) {
+    return accountWriteMutex.runExclusive(
+      () => this.setUnlocked(entries),
+      permit
+    );
+  }
+
+  static replace(entries: OTPEntry[], permit?: AsyncMutexPermit) {
+    return accountWriteMutex.runExclusive(
+      () => this.replaceUnlocked(entries),
+      permit
+    );
+  }
+
+  private static async replaceUnlocked(entries: OTPEntry[]) {
+    const current = await BrowserStorage.get();
+    const next: { [hash: string]: OTPStorage } = {};
+    for (const entry of entries) {
+      next[entry.hash] = this.getOTPStorageFromEntry(entry);
+    }
+    const staleHashes = Object.keys(current).filter(
+      (hash) =>
+        !isReservedBrowserStorageKey(hash) &&
+        !Object.prototype.hasOwnProperty.call(next, hash)
+    );
+    if (staleHashes.length > 0) {
+      await BrowserStorage.remove(staleHashes);
+    }
+    if (Object.keys(next).length > 0) {
+      await BrowserStorage.set(this.ensureUniqueIndex(next));
+    }
+  }
+
+  private static async setUnlocked(entries: OTPEntry[]) {
     let _data = await BrowserStorage.get();
     entries.forEach((entry) => {
       const storageItem = this.getOTPStorageFromEntry(entry);
@@ -590,7 +697,7 @@ export class EntryStorage {
 
     for (const hash of Object.keys(_data)) {
       if (
-        hash === "UserSettings" ||
+        isReservedBrowserStorageKey(hash) ||
         (_data[hash] as { dataType: string }).dataType === "Key" ||
         !this.isValidEntry(_data, hash)
       ) {
@@ -672,11 +779,21 @@ export class EntryStorage {
     return data;
   }
 
-  static async remove(hash: string) {
-    await BrowserStorage.remove(hash);
+  static remove(hash: string, permit?: AsyncMutexPermit) {
+    return accountWriteMutex.runExclusive(
+      () => BrowserStorage.remove(hash),
+      permit
+    );
   }
 
-  static async delete(entry: OTPEntry) {
+  static delete(entry: OTPEntry, permit?: AsyncMutexPermit) {
+    return accountWriteMutex.runExclusive(
+      () => this.deleteUnlocked(entry),
+      permit
+    );
+  }
+
+  private static async deleteUnlocked(entry: OTPEntry) {
     let _data = await BrowserStorage.get();
     if (Object.prototype.hasOwnProperty.call(_data, entry.hash)) {
       delete _data[entry.hash];

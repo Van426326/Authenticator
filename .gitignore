@@ -3,6 +3,7 @@ build
 chrome*
 firefox*
 edge*
+release-assets
 dist
 .vscode
 .atom-build.yml

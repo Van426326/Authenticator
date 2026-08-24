@@ -23,8 +23,13 @@ export async function getSiteName() {
     return [title, null];
   }
 
-  const urlParser = new URL(url);
-  const hostname = urlParser.hostname; // it's always lower case
+  let hostname: string;
+  try {
+    hostname = new URL(url).hostname;
+  } catch {
+    return [title, null];
+  }
+  // hostname is always lower case
 
   // try to parse name from hostname
   // i.e. hostname is www.example.com

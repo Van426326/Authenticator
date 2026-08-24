@@ -11,16 +11,16 @@ import CommonComponents from "./components/common/index";
 import { loadI18nMessages } from "./store/i18n";
 import { Style } from "./store/Style";
 import { Accounts } from "./store/Accounts";
-import { Backup } from "./store/Backup";
+import { Sync } from "./store/Sync";
 import { CurrentView } from "./store/CurrentView";
 import { Menu } from "./store/Menu";
 import { Notification } from "./store/Notification";
 import { Qr } from "./store/Qr";
 import { Advisor } from "./store/Advisor";
-import { Dropbox, Drive, OneDrive } from "./models/backup";
 import { syncTimeWithGoogle } from "./syncTime";
 import { POPUP_HEIGHT, resolvePopupWidth } from "./models/display";
 import { StorageLocation, UserSettings } from "./models/settings";
+import { triggerGithubPopupSync } from "./sync/githubSyncUi";
 
 async function migrateLocalStorageToBrowserStorage() {
   if (localStorage.length > 0) {
@@ -33,7 +33,11 @@ async function migrateLocalStorageToBrowserStorage() {
 
 async function init() {
   await migrateLocalStorageToBrowserStorage();
+  await UserSettings.removeLegacyCloudSettings();
   await UserSettings.updateItems();
+  // A cold service worker may need a full network sync. Never block the first
+  // Vue render on that work: status updates arrive through runtime messages.
+  triggerGithubPopupSync((message) => chrome.runtime.sendMessage(message));
 
   // Add globals
   Vue.prototype.i18n = await loadI18nMessages();
@@ -52,7 +56,7 @@ async function init() {
     modules: {
       accounts: await new Accounts().getModule(),
       advisor: await new Advisor().getModule(),
-      backup: await new Backup().getModule(),
+      sync: await new Sync().getModule(),
       currentView: new CurrentView().getModule(),
       menu: await new Menu().getModule(),
       notification: new Notification().getModule(),
@@ -107,30 +111,11 @@ async function init() {
     );
   }
 
-  // Backup reminder / run backup
-  const backupReminder = setInterval(() => {
-    if (instance.$store.state.accounts.entries.length === 0) {
-      return;
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.action === "githubSyncStatus" && message.status) {
+      store.commit("sync/setStatus", message.status);
     }
-
-    if (instance.$store.getters["accounts/currentlyEncrypted"]) {
-      return;
-    }
-
-    clearInterval(backupReminder);
-
-    const clientTime = Math.floor(new Date().getTime() / 1000 / 3600 / 24);
-    if (!UserSettings.items.lastRemindingBackupTime) {
-      UserSettings.items.lastRemindingBackupTime = clientTime;
-      UserSettings.commitItems();
-    } else if (
-      clientTime - Number(UserSettings.items.lastRemindingBackupTime) >= 30 ||
-      clientTime - Number(UserSettings.items.lastRemindingBackupTime) < 0
-    ) {
-      runScheduledBackup(clientTime, instance);
-    }
-    return;
-  }, 5000);
+  });
 
   // Open search if '/' is pressed
   document.addEventListener(
@@ -199,139 +184,5 @@ async function init() {
   );
 }
 
+// GitHub synchronization is coordinated by the background runtime.
 init();
-
-async function runScheduledBackup(clientTime: number, instance: Vue) {
-  if (instance.$store.state.backup.dropboxToken) {
-    chrome.permissions.contains(
-      { origins: ["https://*.dropboxapi.com/*"] },
-      async (hasPermission) => {
-        if (hasPermission) {
-          try {
-            const dropbox = new Dropbox();
-            const res = await dropbox.upload(
-              instance.$store.state.accounts.encryption.get(
-                instance.$store.state.accounts.defaultEncryption
-              )
-            );
-            if (res) {
-              // we have uploaded backup to Dropbox
-              // no need to remind
-              UserSettings.items.lastRemindingBackupTime = clientTime;
-              UserSettings.commitItems();
-              return;
-            } else if (UserSettings.items.dropboxRevoked === true) {
-              instance.$store.commit(
-                "notification/alert",
-                chrome.i18n.getMessage("token_revoked", ["Dropbox"])
-              );
-              UserSettings.items.dropboxRevoked = undefined;
-              UserSettings.removeItem("dropboxRevoked");
-            }
-          } catch (error) {
-            // ignore
-          }
-        }
-        instance.$store.commit(
-          "notification/alert",
-          instance.i18n.remind_backup
-        );
-        UserSettings.items.lastRemindingBackupTime = clientTime;
-        UserSettings.commitItems();
-      }
-    );
-  }
-  if (instance.$store.state.backup.driveToken) {
-    chrome.permissions.contains(
-      {
-        origins: [
-          "https://www.googleapis.com/*",
-          "https://accounts.google.com/o/oauth2/revoke",
-        ],
-      },
-      async (hasPermission) => {
-        if (hasPermission) {
-          try {
-            const drive = new Drive();
-            const res = await drive.upload(
-              instance.$store.state.accounts.encryption.get(
-                instance.$store.state.accounts.defaultEncryption
-              )
-            );
-            if (res) {
-              UserSettings.items.lastRemindingBackupTime = clientTime;
-              UserSettings.commitItems();
-              return;
-            } else if (UserSettings.items.driveRevoked === true) {
-              instance.$store.commit(
-                "notification/alert",
-                chrome.i18n.getMessage("token_revoked", ["Google Drive"])
-              );
-              UserSettings.items.driveRevoked = undefined;
-              UserSettings.removeItem("driveRevoked");
-            }
-          } catch (error) {
-            // ignore
-          }
-        }
-        instance.$store.commit(
-          "notification/alert",
-          instance.i18n.remind_backup
-        );
-        UserSettings.items.lastRemindingBackupTime = clientTime;
-        UserSettings.commitItems();
-      }
-    );
-  }
-  if (instance.$store.state.backup.oneDriveToken) {
-    chrome.permissions.contains(
-      {
-        origins: [
-          "https://graph.microsoft.com/me/*",
-          "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-        ],
-      },
-      async (hasPermission) => {
-        if (hasPermission) {
-          try {
-            const onedrive = new OneDrive();
-            const res = await onedrive.upload(
-              instance.$store.state.accounts.encryption.get(
-                instance.$store.state.accounts.defaultEncryption
-              )
-            );
-            if (res) {
-              UserSettings.items.lastRemindingBackupTime = clientTime;
-              UserSettings.commitItems();
-              return;
-            } else if (UserSettings.items.oneDriveRevoked === true) {
-              instance.$store.commit(
-                "notification/alert",
-                chrome.i18n.getMessage("token_revoked", ["OneDrive"])
-              );
-              UserSettings.items.oneDriveRevoked = undefined;
-              UserSettings.removeItem("oneDriveRevoked");
-            }
-          } catch (error) {
-            // ignore
-          }
-        }
-        instance.$store.commit(
-          "notification/alert",
-          instance.i18n.remind_backup
-        );
-        UserSettings.items.lastRemindingBackupTime = clientTime;
-        UserSettings.commitItems();
-      }
-    );
-  }
-  if (
-    !instance.$store.state.backup.driveToken &&
-    !instance.$store.state.backup.dropboxToken &&
-    !instance.$store.state.backup.oneDriveToken
-  ) {
-    instance.$store.commit("notification/alert", instance.i18n.remind_backup);
-    UserSettings.items.lastRemindingBackupTime = clientTime;
-    UserSettings.commitItems();
-  }
-}

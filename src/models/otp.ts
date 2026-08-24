@@ -1,6 +1,7 @@
 import { KeyUtilities } from "./key-utilities";
 import { UserSettings } from "./settings";
 import { EntryStorage } from "./storage";
+import { persistAccountMutation } from "../sync/AccountSyncClient";
 
 export enum OTPType {
   totp = 1,
@@ -45,6 +46,38 @@ export class OTPUtil {
         return { length: 0 };
     }
   }
+}
+
+function getSyncPayload(entry: OTPEntryInterface) {
+  if (!entry.secret) {
+    throw new Error("Cannot synchronize a locked OTP entry");
+  }
+  const payload: Record<string, unknown> = {
+    type: OTPType[entry.type],
+    secret: entry.secret,
+  };
+  if (entry.issuer) {
+    payload.issuer = entry.issuer;
+  }
+  if (entry.account) {
+    payload.account = entry.account;
+  }
+  if (entry.type === OTPType.hotp || entry.type === OTPType.hhex) {
+    payload.counter = entry.counter;
+  }
+  if (entry.type === OTPType.totp && entry.period !== 30) {
+    payload.period = entry.period;
+  }
+  if (entry.digits !== 6) {
+    payload.digits = entry.digits;
+  }
+  if (entry.algorithm !== OTPAlgorithm.SHA1) {
+    payload.algorithm = OTPAlgorithm[entry.algorithm];
+  }
+  if (entry.pinned) {
+    payload.pinned = true;
+  }
+  return payload;
 }
 
 export class OTPEntry implements OTPEntryInterface {
@@ -164,13 +197,27 @@ export class OTPEntry implements OTPEntryInterface {
   }
 
   async create() {
-    await EntryStorage.add(this);
-    return;
+    await persistAccountMutation(
+      {
+        entityType: "otp",
+        entityId: this.hash,
+        kind: "upsert",
+        logicalPayload: getSyncPayload(this),
+      },
+      () => EntryStorage.add(this)
+    );
   }
 
   async update() {
-    await EntryStorage.update(this);
-    return;
+    await persistAccountMutation(
+      {
+        entityType: "otp",
+        entityId: this.hash,
+        kind: "upsert",
+        logicalPayload: getSyncPayload(this),
+      },
+      () => EntryStorage.update(this)
+    );
   }
 
   changeEncryption(encryption: EncryptionInterface) {
@@ -235,8 +282,15 @@ export class OTPEntry implements OTPEntryInterface {
   }
 
   async delete() {
-    await EntryStorage.delete(this);
-    return;
+    await persistAccountMutation(
+      {
+        entityType: "otp",
+        entityId: this.hash,
+        kind: "delete",
+        logicalPayload: null,
+      },
+      () => EntryStorage.delete(this)
+    );
   }
 
   async next() {

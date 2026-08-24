@@ -2,6 +2,23 @@ import { EntryStorage } from "../models/storage";
 import { InsightLevel, AdvisorInsight } from "../models/advisor";
 import { StorageLocation, UserSettings } from "../models/settings";
 
+function getAdvisorIgnoreList(value: unknown) {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string");
+  }
+  if (typeof value !== "string") {
+    return [];
+  }
+  try {
+    const parsed = JSON.parse(value || "[]");
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 const insightsData: AdvisorInsightInterface[] = [
   {
     id: "passwordNotSet",
@@ -83,10 +100,9 @@ export class Advisor implements Module {
         },
         updateInsight: async (state: AdvisorState) => {
           state.insights = await this.getInsights();
-          state.ignoreList =
-            typeof UserSettings.items.advisorIgnoreList === "string"
-              ? JSON.parse(UserSettings.items.advisorIgnoreList || "[]")
-              : UserSettings.items.advisorIgnoreList || [];
+          state.ignoreList = getAdvisorIgnoreList(
+            UserSettings.items.advisorIgnoreList
+          );
         },
       },
       namespaced: true,
@@ -95,10 +111,9 @@ export class Advisor implements Module {
 
   private async getInsights() {
     await UserSettings.updateItems();
-    const advisorIgnoreList: string[] =
-      typeof UserSettings.items.advisorIgnoreList === "string"
-        ? JSON.parse(UserSettings.items.advisorIgnoreList || "[]")
-        : UserSettings.items.advisorIgnoreList || [];
+    const advisorIgnoreList = getAdvisorIgnoreList(
+      UserSettings.items.advisorIgnoreList
+    );
 
     const filteredInsightsData: AdvisorInsightInterface[] = [];
 

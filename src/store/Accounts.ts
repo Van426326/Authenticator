@@ -7,6 +7,7 @@ import { getSiteName, getMatchedEntriesHash } from "../utils";
 import { isChromium } from "../browser";
 import { StorageLocation, UserSettings } from "../models/settings";
 import { DataType } from "../models/otp";
+import { persistAccountMutation } from "../sync/AccountSyncClient";
 
 const LegacyEncryption = "LegacyEncryption";
 const generatedTimeSteps = new WeakMap<OTPEntryInterface, string>();
@@ -221,7 +222,19 @@ export class Accounts implements Module {
           const snapshot = context.state.entries.slice();
           reorderPersistence = reorderPersistence
             .catch(() => undefined)
-            .then(() => EntryStorage.set(snapshot));
+            .then(() =>
+              persistAccountMutation(
+                {
+                  entityType: "order",
+                  entityId: "global-order",
+                  kind: "upsert",
+                  logicalPayload: {
+                    ids: snapshot.map((entry) => entry.hash),
+                  },
+                },
+                () => EntryStorage.set(snapshot)
+              )
+            );
           await reorderPersistence;
           return true;
         },
@@ -252,7 +265,17 @@ export class Accounts implements Module {
           state.state.entries.forEach((candidate, index) => {
             candidate.index = index;
           });
-          await EntryStorage.set(state.state.entries);
+          await persistAccountMutation(
+            {
+              entityType: "order",
+              entityId: "global-order",
+              kind: "upsert",
+              logicalPayload: {
+                ids: state.state.entries.map((candidate) => candidate.hash),
+              },
+            },
+            () => EntryStorage.set(state.state.entries)
+          );
           state.commit(
             "updateExport",
             await EntryStorage.getExport(state.state.entries)
@@ -661,6 +684,16 @@ export class Accounts implements Module {
           state: ActionContext<AccountsState, object>,
           newStorageLocation: string
         ) => {
+          if (newStorageLocation === StorageLocation.Sync) {
+            const localSyncState = await chrome.storage.local.get(
+              "githubSyncConnection"
+            );
+            if (localSyncState.githubSyncConnection) {
+              throw new Error(
+                "Disconnect GitHub synchronization before enabling browser sync."
+              );
+            }
+          }
           // sync => local
           if (
             UserSettings.items.storageLocation === StorageLocation.Sync &&
@@ -683,7 +716,7 @@ export class Accounts implements Module {
               });
               return "updateSuccess";
             } else {
-              throw " All data not transferred successfully.";
+              throw new Error("All data not transferred successfully.");
             }
             // local => sync
           } else if (
@@ -708,7 +741,7 @@ export class Accounts implements Module {
               await UserSettings.commitItems();
               return "updateSuccess";
             } else {
-              throw " All data not transferred successfully.";
+              throw new Error("All data not transferred successfully.");
             }
           }
 

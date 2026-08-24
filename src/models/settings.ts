@@ -3,23 +3,25 @@ export enum StorageLocation {
   Local = "local",
 }
 
+function parseJsonSetting(value: string) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    throw new Error("Stored JSON setting is invalid");
+  }
+}
+
+function cloneSerializableSettings(value: UserSettingsData) {
+  try {
+    return JSON.parse(JSON.stringify(value)) as UserSettingsData;
+  } catch {
+    throw new Error("Settings cannot be serialized");
+  }
+}
+
 interface UserSettingsData {
   // local settings
-  driveEncrypted?: boolean;
-  driveFolder?: string;
-  driveRefreshToken?: string;
-  driveRevoked?: boolean;
-  driveToken?: string;
-  dropboxEncrypted?: boolean;
-  dropboxRevoked?: boolean;
-  dropboxToken?: string;
-  lastRemindingBackupTime?: number;
   offset?: number;
-  oneDriveBusiness?: boolean;
-  oneDriveEncrypted?: boolean;
-  oneDriveRevoked?: boolean;
-  oneDriveRefreshToken?: string;
-  oneDriveToken?: string;
   popupWidth?: number;
   storageLocation?: StorageLocation;
 
@@ -34,8 +36,7 @@ interface UserSettingsData {
   zoom?: number;
 }
 
-// Maybe we can have a better way to define this
-const LocalUserSettingsDataKeys = [
+const LegacyCloudSettingKeys = [
   "driveEncrypted",
   "driveFolder",
   "driveRefreshToken",
@@ -45,21 +46,42 @@ const LocalUserSettingsDataKeys = [
   "dropboxRevoked",
   "dropboxToken",
   "lastRemindingBackupTime",
-  "offset",
   "oneDriveBusiness",
   "oneDriveEncrypted",
   "oneDriveRevoked",
   "oneDriveRefreshToken",
   "oneDriveToken",
-  "popupWidth",
-  "storageLocation",
 ];
+
+// Maybe we can have a better way to define this
+const LocalUserSettingsDataKeys = ["offset", "popupWidth", "storageLocation"];
 
 export class UserSettings {
   static items: UserSettingsData = {};
 
   static async updateItems() {
     UserSettings.items = await UserSettings.getAllItems();
+  }
+
+  static async removeLegacyCloudSettings() {
+    for (const location of [StorageLocation.Local, StorageLocation.Sync]) {
+      const stored = await chrome.storage[location].get("UserSettings");
+      const settings = stored.UserSettings;
+      if (!settings || typeof settings !== "object") {
+        continue;
+      }
+      let changed = false;
+      for (const key of LegacyCloudSettingKeys) {
+        if (Object.prototype.hasOwnProperty.call(settings, key)) {
+          delete settings[key];
+          changed = true;
+        }
+      }
+      if (changed) {
+        await chrome.storage[location].set({ UserSettings: settings });
+      }
+    }
+    await UserSettings.updateItems();
   }
 
   static async convertFromLocalStorage(
@@ -74,7 +96,7 @@ export class UserSettings {
       } else if (isNumberOption(key)) {
         settings[key] = Number(data[key]);
       } else if (isJSONOption(key)) {
-        settings[key] = JSON.parse(data[key]);
+        settings[key] = parseJsonSetting(data[key]);
       } else {
         settings[key as keyof UserSettingsData] = data[key];
       }
@@ -93,7 +115,7 @@ export class UserSettings {
       await chrome.storage[storageLocation].set({
         // JSON.parse(JSON.stringify()) strips functions (e.g. getItem, setItem, ...) which may have been added to the object.
         // Without this, a crash may occur as chrome.storage throws an error when trying to serialize a function.
-        UserSettings: JSON.parse(JSON.stringify(UserSettings.items)),
+        UserSettings: cloneSerializableSettings(UserSettings.items),
       });
     } else {
       const { syncableSettings, localSettings } = UserSettings.splitSettings(
@@ -102,10 +124,10 @@ export class UserSettings {
 
       await Promise.all([
         chrome.storage[StorageLocation.Local].set({
-          UserSettings: JSON.parse(JSON.stringify(localSettings)),
+          UserSettings: cloneSerializableSettings(localSettings),
         }),
         chrome.storage[StorageLocation.Sync].set({
-          UserSettings: JSON.parse(JSON.stringify(syncableSettings)),
+          UserSettings: cloneSerializableSettings(syncableSettings),
         }),
       ]);
     }
@@ -176,50 +198,18 @@ export class UserSettings {
   }
 }
 
-type BooleanOption =
-  | "autofill"
-  | "driveEncrypted"
-  | "driveRevoked"
-  | "dropboxEncrypted"
-  | "dropboxRevoked"
-  | "enableContextMenu"
-  | "oneDriveBusiness"
-  | "oneDriveEncrypted"
-  | "oneDriveRevoked"
-  | "smartFilter";
+type BooleanOption = "autofill" | "enableContextMenu" | "smartFilter";
 
-type NumberOption =
-  | "autolock"
-  | "lastRemindingBackupTime"
-  | "offset"
-  | "popupWidth"
-  | "zoom";
+type NumberOption = "autolock" | "offset" | "popupWidth" | "zoom";
 
 type JSONOption = "advisorIgnoreList";
 
 function isBooleanOption(key: string): key is BooleanOption {
-  return [
-    "autofill",
-    "driveEncrypted",
-    "driveRevoked",
-    "dropboxEncrypted",
-    "dropboxRevoked",
-    "enableContextMenu",
-    "oneDriveBusiness",
-    "oneDriveEncrypted",
-    "oneDriveRevoked",
-    "smartFilter",
-  ].includes(key);
+  return ["autofill", "enableContextMenu", "smartFilter"].includes(key);
 }
 
 function isNumberOption(key: string): key is NumberOption {
-  return [
-    "autolock",
-    "lastRemindingBackupTime",
-    "offset",
-    "popupWidth",
-    "zoom",
-  ].includes(key);
+  return ["autolock", "offset", "popupWidth", "zoom"].includes(key);
 }
 
 function isJSONOption(key: string): key is JSONOption {

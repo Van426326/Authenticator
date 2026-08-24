@@ -1,5 +1,4 @@
 import { Permission } from "../models/permission";
-import { UserSettings } from "../models/settings";
 
 const permissions: Permission[] = [
   {
@@ -10,11 +9,6 @@ const permissions: Permission[] = [
   {
     id: "storage",
     description: chrome.i18n.getMessage("permission_storage"),
-    revocable: false,
-  },
-  {
-    id: "identity",
-    description: chrome.i18n.getMessage("permission_identity"),
     revocable: false,
   },
   {
@@ -41,105 +35,6 @@ const permissions: Permission[] = [
     id: "https://www.google.com/*",
     description: chrome.i18n.getMessage("permission_sync_clock"),
     revocable: true,
-  },
-  {
-    id: "https://*.dropboxapi.com/*",
-    description: chrome.i18n.getMessage("permission_dropbox"),
-    revocable: true,
-    validation: [
-      async () => {
-        await UserSettings.updateItems();
-        if (UserSettings.items.dropboxToken !== undefined) {
-          return {
-            valid: false,
-            message: chrome.i18n.getMessage("permission_dropbox_cannot_revoke"),
-          };
-        }
-        return {
-          valid: true,
-        };
-      },
-    ],
-  },
-  {
-    id: "https://www.googleapis.com/*",
-    description: chrome.i18n.getMessage("permission_drive"),
-    revocable: true,
-    validation: [
-      async () => {
-        await UserSettings.updateItems();
-        if (UserSettings.items.driveToken !== undefined) {
-          return {
-            valid: false,
-            message: chrome.i18n.getMessage("permission_drive_cannot_revoke"),
-          };
-        }
-        return {
-          valid: true,
-        };
-      },
-    ],
-  },
-  {
-    id: "https://accounts.google.com/*",
-    description: chrome.i18n.getMessage("permission_drive"),
-    revocable: true,
-    validation: [
-      async () => {
-        await UserSettings.updateItems();
-        if (UserSettings.items.driveToken !== undefined) {
-          return {
-            valid: false,
-            message: chrome.i18n.getMessage("permission_drive_cannot_revoke"),
-          };
-        }
-        return {
-          valid: true,
-        };
-      },
-    ],
-  },
-  {
-    id: "https://graph.microsoft.com/*",
-    description: chrome.i18n.getMessage("permission_onedrive"),
-    revocable: true,
-    validation: [
-      async () => {
-        await UserSettings.updateItems();
-        if (UserSettings.items.oneDriveToken !== undefined) {
-          return {
-            valid: false,
-            message: chrome.i18n.getMessage(
-              "permission_onedrive_cannot_revoke"
-            ),
-          };
-        }
-        return {
-          valid: true,
-        };
-      },
-    ],
-  },
-  {
-    id: "https://login.microsoftonline.com/*",
-    description: chrome.i18n.getMessage("permission_onedrive"),
-    revocable: true,
-    validation: [
-      async () => {
-        await UserSettings.updateItems();
-        if (UserSettings.items.oneDriveToken !== undefined) {
-          return {
-            valid: false,
-            message: chrome.i18n.getMessage(
-              "permission_onedrive_cannot_revoke"
-            ),
-          };
-        }
-        return {
-          valid: true,
-        };
-      },
-    ],
   },
 ];
 
@@ -212,9 +107,13 @@ export class Permissions implements Module {
     const permissionObject = permissions.find((p) => p.id === permissionId);
 
     if (permissionObject === undefined) {
+      const description = permissionId.startsWith("https://")
+        ? chrome.i18n.getMessage("permission_github_api") ||
+          "GitHub API and private repository"
+        : chrome.i18n.getMessage("permission_unknown_permission");
       return new Permission({
         id: permissionId,
-        description: chrome.i18n.getMessage("permission_unknown_permission"),
+        description,
         revocable: true,
       });
     }
